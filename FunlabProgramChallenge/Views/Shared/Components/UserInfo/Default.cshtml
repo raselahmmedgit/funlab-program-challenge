@@ -1,0 +1,82 @@
+﻿@model LoggedUserViewModel
+<div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+    @if (Model.Role == "Admin")
+    {
+    <ul class="navbar-nav flex-grow-1">
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">Pages</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "Page", new { Area = "" })">All Page</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "Page", new { Area = "" })">Add Page</a>
+            </div>
+        </li>
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">Media</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "Media", new { Area = "" })">All Media</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "Media", new { Area = "" })">Add Media</a>
+            </div>
+        </li>
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">Menu</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "Menu", new { Area = "" })">All Menu</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "Menu", new { Area = "" })">Add Menu</a>
+            </div>
+        </li>
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">Blogs</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "BlogCategory", new { Area = "" })">All Blog Category</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "BlogCategory", new { Area = "" })">Add Blog Category</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="@Url.Action("Index", "Blog", new { Area = "" })">All Blog</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "Blog", new { Area = "" })">Add Blog</a>
+            </div>
+        </li>
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">News</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "NewsContent", new { Area = "" })">All News</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "NewsContent", new { Area = "" })">Add News</a>
+            </div>
+        </li>
+        <li class="nav-item dropdown">
+            <button class="nav-link float-left">Setting</button>
+            <button class="nav-pointer float-right pt-2 pb-2 dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <div class="dropdown-menu">
+                <a class="dropdown-item" href="@Url.Action("Index", "SiteInfo", new { Area = "" })">Site Info</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "SiteInfo", new { Area = "" })">Add Site Info</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="@Url.Action("Index", "EmailSmsConfig", new { Area = "" })">Email/Sms Config</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "EmailSmsConfig", new { Area = "" })">Add Email/Sms Config</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="@Url.Action("Index", "ContactUsConfig", new { Area = "" })">Contact Us Config</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "ContactUsConfig", new { Area = "" })">Add Contact Us Config</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="@Url.Action("Index", "SocialMediaConfig", new { Area = "" })">Social Media Config</a>
+                <a class="dropdown-item" href="@Url.Action("Add", "SocialMediaConfig", new { Area = "" })">Add Social Media Config</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="@Url.Action("Index", "User", new { Area = "" })">All User</a>
+                <a class="dropdown-item" href="@Url.Action("Index", "Role", new { Area = "" })">All Role</a>
+            </div>
+        </li>
+    </ul>
+    }
+    else if (Model.Role == "Member")
+    {
+        <ul class="navbar-nav flex-grow-1">
+            <li class="nav-item">
+                <a class="nav-link" href="@Url.Action("Index", "Home", new { Area = "" })">Home</a>
+            </li>
+        </ul>
+    }
+    <div class="navbar-login float-right">
+        Welcome, @Model.UserName <a class="btn btn-danger" href="@Url.Action("LogOut", "Account", new { Area = "" })">Log Out</a>
+    </div>
+</div>
