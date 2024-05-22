@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace rapid.erp.ViewModel.Security
+namespace FunlabProgramChallenge.ViewModels
 {
     public partial class RegisterViewModel
     {

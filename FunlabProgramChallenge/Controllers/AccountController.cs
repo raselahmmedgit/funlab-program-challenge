@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using FunlabProgramChallenge.Core;
+using FunlabProgramChallenge.Core.Identity;
+using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.Utility;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using rapid.erp.ViewModel.Security;
+using FunlabProgramChallenge.ViewModels;
 using System.Web;
 
 namespace FunlabProgramChallenge.Controllers
@@ -10,15 +14,15 @@ namespace FunlabProgramChallenge.Controllers
     public class AccountController : BaseController
     {
         #region Global Variable Declaration
+        private readonly ILogger<AccountController> _iLogger;
         private UserManager<ApplicationUser> _userManager;
         private SignInManager<ApplicationUser> _signInManager;
         private RoleManager<ApplicationRole> _roleManager;
         private readonly IConfiguration _iConfiguration;
-        private readonly ILogger<AccountController> _iLogger;
         #endregion
 
         #region Constructor
-        public AccountController(UserManager<ApplicationUser> userManager,
+        public AccountController(ILogger<AccountController> iLogger, UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             IConfiguration iConfiguration)
@@ -27,7 +31,7 @@ namespace FunlabProgramChallenge.Controllers
             _signInManager = signInManager;
             _roleManager = roleManager;
             _iConfiguration = iConfiguration;
-            _log = LogManager.GetLogger(typeof(AccountController));
+            _iLogger = iLogger;
         }
         #endregion
 
@@ -60,7 +64,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestStart("Login[POST]", $"UserEmail: {model.Email}"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Login[POST]", $"UserEmail: {model.Email}"));
                 if (ModelState.IsValid)
                 {
                     ApplicationUser user = await _userManager.FindByNameAsync(model.Email);
@@ -74,7 +78,7 @@ namespace FunlabProgramChallenge.Controllers
                         {
                             //var data = await GetUserSignInOutHistoryLocal(model);
                             //await _userLogInOutHistoryManager.CreateLogInOutHistoryAsync(data);
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User logged in, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User logged in, UserEmail: {model.Email}"));
                             var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppUserRole.Admin);
                             if (isAdmin)
                             {
@@ -93,13 +97,13 @@ namespace FunlabProgramChallenge.Controllers
 
                         if (result.IsLockedOut)
                         {
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.Email}"));
                             return View("Lockout");
                         }
                         else
                         {
                             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.Email}"));
                             return View(model);
                         }
                     }
@@ -109,11 +113,27 @@ namespace FunlabProgramChallenge.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "Login[POST]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Login[POST]"));
             }
 
             // If we got this far, something failed, redisplay form
             return View(model);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                await _signInManager.SignOutAsync();
+            }
+            catch (Exception ex)
+            {
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Logout"));
+            }
+            return RedirectToAction("Index", "Login");
+
         }
 
         //
@@ -150,7 +170,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestStart("Register[POST]"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Register[POST]", ""));
                 var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
                 if (allowedRegister)
                 {
@@ -168,15 +188,14 @@ namespace FunlabProgramChallenge.Controllers
                         if (!_result.Success)
                         {
                             ModelState.AddModelError(string.Empty, _result.Error);
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", _result.Error));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", _result.Error));
                             return View(model);
                         }
 
                         var role = new ApplicationRole
                         {
                             Id = model.RoleName,
-                            Name = model.RoleName,
-                            IsActive = true
+                            Name = model.RoleName
                         };
                         //IdentityResult resultRole = await _roleManager.CreateAsync(role);
                         var resultRoleName = await _roleManager.GetRoleNameAsync(role);
@@ -191,7 +210,7 @@ namespace FunlabProgramChallenge.Controllers
                                 await _userManager.AddToRoleAsync(user, resultRoleName);
 
                                 await _signInManager.SignInAsync(user, isPersistent: false);
-                                _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.Email}"));
+                                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.Email}"));
 
                                 var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppUserRole.Admin);
                                 if (isAdmin)
@@ -209,7 +228,7 @@ namespace FunlabProgramChallenge.Controllers
 
                             }
 
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.Email}"));
                             AddErrors(result);
                         }
 
@@ -224,7 +243,7 @@ namespace FunlabProgramChallenge.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "Register[POST]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Register[POST]"));
             }
 
             // If we got this far, something failed, redisplay form
@@ -265,7 +284,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestStart("ForgotPassword[POST]", $"UserEmail: {model.Email}"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ForgotPassword[POST]", $"UserEmail: {model.Email}"));
                 var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
                 if (allowedRegister)
                 {
@@ -278,7 +297,7 @@ namespace FunlabProgramChallenge.Controllers
                             isValid = false;
                             // Don't reveal that the user does not exist
                             ModelState.AddModelError(string.Empty, "Invalid email.");
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
                             return View(model);
                         }
 
@@ -288,7 +307,7 @@ namespace FunlabProgramChallenge.Controllers
                         //    isValid = false;
                         //    // Don't reveal that the user email is not confirmed
                         //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                        //    _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
+                        //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
                         //    return View(model);
                         //}
 
@@ -313,7 +332,7 @@ namespace FunlabProgramChallenge.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "ForgotPassword[POST]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ForgotPassword[POST]"));
             }
 
             // If we got this far, something failed, redisplay form
@@ -377,7 +396,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestStart("ResetPassword[POST]", $"UserEmail: {model.Email}"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ResetPassword[POST]", $"UserEmail: {model.Email}"));
                 var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
                 if (allowedRegister)
                 {
@@ -390,7 +409,7 @@ namespace FunlabProgramChallenge.Controllers
                             isValid = false;
                             // Don't reveal that the user does not exist
                             ModelState.AddModelError(string.Empty, "Invalid email.");
-                            _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
                             return View(model);
                         }
 
@@ -400,7 +419,7 @@ namespace FunlabProgramChallenge.Controllers
                         //    isValid = false;
                         //    // Don't reveal that the user email is not confirmed
                         //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                        //    _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
+                        //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
                         //    return View(model);
                         //}
 
@@ -423,7 +442,7 @@ namespace FunlabProgramChallenge.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "ResetPassword[POST]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ResetPassword[POST]"));
             }
 
             // If we got this far, something failed, redisplay form
@@ -444,13 +463,13 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestStart("LogOff", $"User:{User.Identity.Name}"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOff", $"User:{User.Identity.Name}"));
                 await _signInManager.SignOutAsync();
-                _log.Info(LogMessageHelper.LogFormattedMessageForRequestSuccess("LogOff", $"User logged out"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOff", $"User logged out"));
             }
             catch (Exception ex)
             {
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "LogOff"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LogOff"));
             }
             return RedirectToAction("Login", "Account");
         }
@@ -474,7 +493,7 @@ namespace FunlabProgramChallenge.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _log.Error(LogMessageHelper.FormateMessageForException(ex, "IsEmailExists"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "IsEmailExists"));
                 return Result.Fail(MessageHelper.Error);
             }
         }

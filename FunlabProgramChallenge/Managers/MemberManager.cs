@@ -1,35 +1,31 @@
-﻿using FunlabProgramChallenge.Core;
+﻿using AutoMapper;
+using FunlabProgramChallenge.Core;
 using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.Models;
+using FunlabProgramChallenge.Repositories;
 using FunlabProgramChallenge.ViewModels;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace FunlabProgramChallenge.Managers
 {
     public class MemberManager : IMemberManager
     {
-        private readonly IConfiguration _iConfiguration;
-        private readonly Microsoft.AspNetCore.Hosting.IHostingEnvironment _iHostingEnvironment;
+        private readonly IMemberRepository _iMemberRepository;
+        private readonly IMapper _iMapper;
 
-        public MemberManager(IConfiguration iConfiguration, Microsoft.AspNetCore.Hosting.IHostingEnvironment iHostingEnvironment)
+        public MemberManager(IMemberRepository iMemberRepository
+            , IMapper iMapper)
         {
-            _iConfiguration = iConfiguration;
-            _iHostingEnvironment = iHostingEnvironment;
+            _iMemberRepository = iMemberRepository;
+            _iMapper = iMapper;
         }
 
-        public async Task<List<MemberViewModel>> GetMembersAsync()
+        public async Task<MemberViewModel> GetMemberAsync()
         {
             try
             {
-                JsonDataStoreHelper jsonDataStoreHelper = new JsonDataStoreHelper(_iHostingEnvironment, "employee.json");
-                var employeeJson = await jsonDataStoreHelper.ReadJsonData();
-                var employeeViewModelList = JsonConvert.DeserializeObject<List<MemberViewModel>>(employeeJson);
-                return employeeViewModelList;
+                var dataIEnumerable = await _iMemberRepository.GetMembersAsync();
+                var data = dataIEnumerable.FirstOrDefault();
+                return _iMapper.Map<Member, MemberViewModel>(data);
             }
             catch (Exception)
             {
@@ -37,15 +33,12 @@ namespace FunlabProgramChallenge.Managers
             }
         }
 
-        public async Task<MemberViewModel> GetMemberByIdAsync(int employeeId)
+        public async Task<MemberViewModel> GetMemberAsync(int id)
         {
             try
             {
-                JsonDataStoreHelper jsonDataStoreHelper = new JsonDataStoreHelper(_iHostingEnvironment, "employee.json");
-                var employeeJson = await jsonDataStoreHelper.ReadJsonData();
-                var employeeViewModelList = JsonConvert.DeserializeObject<List<MemberViewModel>>(employeeJson);
-                var employeeViewModel = employeeViewModelList.FirstOrDefault(x => x.MemberId == employeeId);
-                return employeeViewModel;
+                var data = await _iMemberRepository.GetMemberAsync(id);
+                return _iMapper.Map<Member, MemberViewModel>(data);
             }
             catch (Exception)
             {
@@ -53,80 +46,101 @@ namespace FunlabProgramChallenge.Managers
             }
         }
 
-        public async Task<Result> InsertAsync(MemberViewModel viewModel)
+        public async Task<IEnumerable<MemberViewModel>> GetMembersAsync()
         {
             try
             {
-                if (viewModel.MemberId == 0)
+                var data = await _iMemberRepository.GetMembersAsync();
+                return _iMapper.Map<IEnumerable<Member>, IEnumerable<MemberViewModel>>(data);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<Result> InsertMemberAsync(MemberViewModel model)
+        {
+            try
+            {
+                var data = _iMapper.Map<MemberViewModel, Member>(model);
+
+                var saveChange = await _iMemberRepository.InsertMemberAsync(data);
+
+                if (saveChange > 0)
                 {
-                    if (viewModel != null)
-                    {
-                        JsonDataStoreHelper jsonDataStoreHelper = new JsonDataStoreHelper(_iHostingEnvironment, "employee.json");
-                        var viewModelList = await GetMembersAsync();
-                        viewModelList.Add(viewModel);
-                        string viewModelListJson = JsonConvert.SerializeObject(viewModelList);
-                        var isWrite = await jsonDataStoreHelper.WriteJsonData(viewModelListJson);
-                        return Result.Ok(MessageHelper.Save);
-                    }
-                    else
-                    {
-                        return Result.Fail(MessageHelper.SaveFail);
-                    }
+                    return Result.Ok(MessageHelper.Save);
+                }
+                else
+                {
+                    return Result.Fail(MessageHelper.SaveFail);
                 }
             }
             catch (Exception)
             {
                 throw;
             }
-
-            return Result.Fail(MessageHelper.SaveFail);
         }
 
-        public async Task<Result> UpdateAsync(MemberViewModel viewModel)
+        public async Task<Result> InsertMemberAsync(List<MemberViewModel> modelList)
         {
             try
             {
-                if (viewModel.MemberId > 0)
+                var dataList = _iMapper.Map<List<MemberViewModel>, List<Member>>(modelList);
+
+                var saveChange = await _iMemberRepository.InsertMemberAsync(dataList);
+
+                if (saveChange > 0)
                 {
-                    if (viewModel != null)
-                    {
-                        JsonDataStoreHelper jsonDataStoreHelper = new JsonDataStoreHelper(_iHostingEnvironment, "employee.json");
-                        var viewModelList = await GetMembersAsync();
-                        var viemModelRemove = viewModelList.FirstOrDefault(x => x.MemberId == viewModel.MemberId);
-                        viewModelList.Remove(viemModelRemove);
-                        viewModelList.Add(viewModel);
-                        string viewModelListJson = JsonConvert.SerializeObject(viewModelList);
-                        var isWrite = await jsonDataStoreHelper.WriteJsonData(viewModelListJson);
-                        return Result.Ok(MessageHelper.Update);
-                    }
-                    else
-                    {
-                        return Result.Fail(MessageHelper.UpdateFail);
-                    }
+                    return Result.Ok(MessageHelper.Save);
+                }
+                else
+                {
+                    return Result.Fail(MessageHelper.SaveFail);
                 }
             }
             catch (Exception)
             {
                 throw;
             }
-
-            return Result.Fail(MessageHelper.UpdateFail);
         }
 
-        public async Task<Result> DeleteAsync(MemberViewModel viewModel)
+        public async Task<Result> UpdateMemberAsync(MemberViewModel model)
         {
             try
             {
-                if (viewModel.MemberId > 0)
+                var data = _iMapper.Map<MemberViewModel, Member>(model);
+
+                var saveChange = await _iMemberRepository.UpdateMemberAsync(data);
+
+                if (saveChange > 0)
                 {
-                    if (viewModel != null)
+                    return Result.Ok(MessageHelper.Update);
+                }
+                else
+                {
+                    return Result.Fail(MessageHelper.UpdateFail);
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<Result> DeleteMemberAsync(int id)
+        {
+            try
+            {
+                var model = await GetMemberAsync(id);
+                if (model != null)
+                {
+                    var data = _iMapper.Map<MemberViewModel, Member>(model);
+
+                    var saveChange = await _iMemberRepository.DeleteMemberAsync(data);
+
+                    if (saveChange > 0)
                     {
-                        JsonDataStoreHelper jsonDataStoreHelper = new JsonDataStoreHelper(_iHostingEnvironment, "employee.json");
-                        var viewModelList = await GetMembersAsync();
-                        var viemModelRemove = viewModelList.FirstOrDefault(x => x.MemberId == viewModel.MemberId);
-                        viewModelList.Remove(viemModelRemove);
-                        string viewModelListJson = JsonConvert.SerializeObject(viewModelList);
-                        var isWrite = await jsonDataStoreHelper.WriteJsonData(viewModelListJson);
                         return Result.Ok(MessageHelper.Delete);
                     }
                     else
@@ -134,22 +148,27 @@ namespace FunlabProgramChallenge.Managers
                         return Result.Fail(MessageHelper.DeleteFail);
                     }
                 }
+                else
+                {
+                    return Result.Fail(MessageHelper.DeleteFail);
+                }
             }
             catch (Exception)
             {
                 throw;
             }
-
-            return Result.Fail(MessageHelper.DeleteFail);
         }
+
     }
 
     public interface IMemberManager
     {
-        Task<List<MemberViewModel>> GetMembersAsync();
-        Task<MemberViewModel> GetMemberByIdAsync(int employeeId);
-        Task<Result> InsertAsync(MemberViewModel viewModel);
-        Task<Result> UpdateAsync(MemberViewModel viewModel);
-        Task<Result> DeleteAsync(MemberViewModel viewModel);
+        Task<MemberViewModel> GetMemberAsync();
+        Task<MemberViewModel> GetMemberAsync(int id);
+        Task<IEnumerable<MemberViewModel>> GetMembersAsync();
+        Task<Result> InsertMemberAsync(List<MemberViewModel> modelList);
+        Task<Result> InsertMemberAsync(MemberViewModel model);
+        Task<Result> UpdateMemberAsync(MemberViewModel model);
+        Task<Result> DeleteMemberAsync(int id);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using FunlabProgramChallenge.Models;
+using FunlabProgramChallenge.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 

@@ -1,4 +1,4 @@
-﻿namespace rapid.erp.ViewModel.Security
+﻿namespace FunlabProgramChallenge.ViewModels
 {
     public partial class LoggedUserViewModel
     {

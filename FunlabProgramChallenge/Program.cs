@@ -1,9 +1,18 @@
+using FunlabProgramChallenge;
+using FunlabProgramChallenge.Managers;
+using FunlabProgramChallenge.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
+
+builder.Services.AddTransient<IMemberRepository, MemberRepository>();
+builder.Services.AddTransient<IMemberManager, MemberManager>();
+
+BootStrapper.Run(builder.Services, builder.Configuration);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
