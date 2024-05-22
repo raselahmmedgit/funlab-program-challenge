@@ -15,12 +15,20 @@
         public static int PageSize = 10;
         public static int Page = 1;
 
-        public static class AppUserRole
+        public static string WebRootPath;
+        public static string ContentRootPath;
+
+        public static class AppRole
         {
-            public static string Admin = "Admin";
-            public static string Member = "Member";
+            public static string Admin = "2ac48615-4620-476b-899f-d99aa3138f4b";
+            public static string Member = "1e500ab8-4bd1-4dee-a7e4-d4f7c7a45b28";
         }
 
+        public static class AppUser
+        {
+            public static string Admin = "c79fa52e-a3db-4bde-be90-7d5dd35836de";
+            public static string Member = "28909eda-0b7e-44a6-a565-9f38a6641923";
+        }
     }
 
 }

@@ -61,5 +61,9 @@ namespace FunlabProgramChallenge.Models
         [MaxLength(128)]
         public string CardCvc { get; set; }
 
+        [DisplayName("Card Country")]
+        [MaxLength(128)]
+        public string CardCountry { get; set; }
+
     }
 }

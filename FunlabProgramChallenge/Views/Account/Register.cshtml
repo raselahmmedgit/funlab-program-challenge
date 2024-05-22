@@ -1,49 +1,89 @@
 ﻿@model FunlabProgramChallenge.ViewModels.RegisterViewModel
 @{ 
-    ViewData["Title"] = "Register";
+    ViewData["Title"] = "Sign Up";
     Layout = "~/Views/Shared/_LayoutLogin.cshtml";
 }
 
-<!--Login Page-->
-<div class="row">
-    <div class="col-12 mt-6">
-        <form method="post" asp-area="" asp-controller="Account" asp-action="Register" class="form-signin text-center">
-            <img src="~/default/images/logo.png" alt="home" class="img-logo mb-3" />
-            <h1 class="mb-3 font-weight-normal">Create a new account.</h1>
-            <div class="validation-summary mb-3">
-                <div asp-validation-summary="All" class="text-danger"></div>
+<!--Register Page-->
+<div class="row mt-4">
+    <div class="col-3">
+    </div>
+    <div class="col-6 text-center">
+        <a class="btn btn-secondary" href="@Url.Action("LogIn", "Account", new { Area = "" })">Sign In</a>
+        <a class="btn btn-primary" href="@Url.Action("Register", "Account", new { Area = "" })">Sign Up</a>
+    </div>
+    <div class="col-3">
+    </div>
+</div>
+<div class="row mt-2">
+    <div class="col-3">
+    </div>
+    <div class="col-6">
+        <div class="">
+            @* <h2 class="mb-3 font-weight-normal">Sign Up</h2> *@
+            <div class="mb-3">
+                <div class="validation-message text-danger"></div>
             </div>
             <div class="form-group mb-3">
-                <label for="Email" class="sr-only">Email address</label>
-                <input type="email" id="Email" name="Email" class="form-control" placeholder="Email address" required autofocus>
+                <label for="UserName" class="control-label">Name</label>
+                <input type="text" id="UserName" name="UserName" class="form-control" placeholder="Name" required autofocus>
             </div>
             <div class="form-group mb-3">
-                <label for="Password" class="sr-only">Password</label>
-                <input type="password" id="Password" name="Password" class="form-control" placeholder="Password" required>
+                <label for="UserEmail" class="control-label">Email</label>
+                <input type="email" id="UserEmail" name="UserEmail" class="form-control" placeholder="Email" required autofocus>
+            </div>
+            @* <div class="form-group mb-3">
+                <label for="UserPassword" class="control-label">Password</label>
+                <input type="password" id="UserPassword" name="UserPassword" class="form-control" placeholder="Password" required>
             </div>
             <div class="form-group mb-3">
-                <label for="ConfirmPassword" class="sr-only">Confirm Password</label>
-                <input type="password" id="ConfirmPassword" name="ConfirmPassword" class="form-control mb-3" placeholder="Confirm password" required>
-            </div>
+                <label for="UserConfirmPassword" class="control-label">Confirm Password</label>
+                <input type="password" id="UserConfirmPassword" name="UserConfirmPassword" class="form-control mb-3" placeholder="Confirm password" required>
+            </div> *@
             <div class="form-group mb-3">
                 <div class="row">
-                    <div class="col-6 text-left">
-                        <a href="@Url.Action("ForgotPassword", "Account", new { Area = "" })" class="txt3">
-                            Forgot Password?
-                        </a>
+                    <div class="col-12">
+                        <div class="form-group mb-3">
+                            <label for="CardNumber" class="control-label">Card Number</label>
+                            <input type="text" id="CardNumber" name="CardNumber" class="form-control" placeholder="1234 1234 1234" required autofocus>
+                        </div>
                     </div>
-                    <div class="col-6 text-right">
-                        <a href="@Url.Action("Login", "Account", new { Area = "" })" class="txt3">
-                            Back to log in
-                        </a>
+                    <div class="col-6">
+                        <div class="form-group mb-3">
+                            <label for="CardExpiration" class="control-label">Expiration</label>
+                            <input type="text" id="CardExpiration" name="CardExpiration" class="form-control" placeholder="MM / YY" required autofocus>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="form-group mb-3">
+                            <label for="CardCvc" class="control-label">CVC</label>
+                            <input type="text" id="CardCvc" name="CardCvc" class="form-control" placeholder="CVC" required autofocus>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="form-group mb-3">
+                            <label for="CardCountry" class="control-label">Country</label>
+                            <select id="CardCountry" name="CardCountry" class="form-control" required autofocus>
+                                <option value="Australia">Australia</option>
+                                <option value="Bangladesh">Bangladesh</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="mt-5">
-                <input type="hidden" id="RoleName" name="RoleName" value="@Model.RoleName">
-                <input type="hidden" id="ReturnUrl" name="ReturnUrl" value="@Model.ReturnUrl">
-                <button class="btn btn-lg btn-primary btn-block" type="submit">Register</button>
+            <div class="mt-2">
+                <button class="btn btn-primary btn-block" id="btnSignUpSubmit">Submit</button>
             </div>
-        </form>
+        </div>
+    </div>
+    <div class="col-3">
     </div>
 </div>
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            SignUp.InitSignUp();
+        });
+    </script>
+}

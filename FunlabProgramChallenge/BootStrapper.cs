@@ -1,36 +1,48 @@
 ﻿using FunlabProgramChallenge.Core.Identity;
+using FunlabProgramChallenge.Managers;
 using FunlabProgramChallenge.Model;
 using FunlabProgramChallenge.Models;
+using FunlabProgramChallenge.Repositories;
 using FunlabProgramChallenge.Utility;
 using FunlabProgramChallenge.Web.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 
 namespace FunlabProgramChallenge
 {
     public class BootStrapper
     {
-        public static void Run(IServiceCollection services, IConfiguration configuration)
+        public static void Run(WebApplicationBuilder builder)
         {
             try
             {
-                services.AddRouting(options => options.LowercaseUrls = true);
+                // Add services to the container.
+                builder.Services.AddControllersWithViews();
+
+                builder.Services.AddScoped<IMemberRepository, MemberRepository>();
+                builder.Services.AddScoped<IMemberManager, MemberManager>();
+
+                builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
                 // Add functionality to inject IOptions<T>
-                services.AddOptions();
+                builder.Services.AddOptions();
+                builder.Services.AddCors();
 
-                services.AddCors();
+                AppConstants.WebRootPath = builder.Environment.WebRootPath;
+                AppConstants.ContentRootPath = builder.Environment.ContentRootPath;
+
+                string connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
                 #region Identity
-                services.AddDbContext<AppIdentityDbContext>(options =>
-                    options.UseSqlServer(
-                        configuration.GetConnectionString("DefaultConnection")));
+                builder.Services.AddDbContext<AppIdentityDbContext>(options =>
+                    options.UseSqlServer(connectionString));
 
-                services.AddIdentity<ApplicationUser, ApplicationRole>()
+                builder.Services.AddIdentity<ApplicationUser, ApplicationRole>()
                     .AddEntityFrameworkStores<AppIdentityDbContext>()
                     .AddDefaultTokenProviders();
 
-                services.Configure<IdentityOptions>(options =>
+                builder.Services.Configure<IdentityOptions>(options =>
                 {
                     // Password settings.
                     options.Password.RequireDigit = true;
@@ -51,9 +63,9 @@ namespace FunlabProgramChallenge
                     options.User.RequireUniqueEmail = false;
                 });
 
-                services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory>();
+                builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory>();
 
-                services.ConfigureApplicationCookie(options =>
+                builder.Services.ConfigureApplicationCookie(options =>
                 {
                     // Cookie settings
                     options.Cookie.HttpOnly = true;
@@ -67,25 +79,22 @@ namespace FunlabProgramChallenge
                 #endregion
 
                 #region Database
-                services.AddDbContext<AppDbContext>(options =>
-                   options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+                builder.Services.AddDbContext<AppDbContext>(options =>
+                   options.UseSqlServer(connectionString));
                 #endregion
 
                 #region MemoryCache
-                //services.AddDistributedMemoryCache();
-                //services.AddMemoryCache();
+                //builder.Services.AddDistributedMemoryCache();
+                //builder.Services.AddMemoryCache();
                 #endregion
 
-                //services.AddMvc(
+                //builder.Services.AddMvc(
                 //   options => options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute())
                 //);
                 //call this in case you need aspnet-user-authtype/aspnet-user-identity
-                services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+                builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-                services.RegisterAutoMapper();
-
-                // Initializes and seeds the database.
-                InitializeAndSeedDbAsync(configuration);
+                builder.Services.RegisterAutoMapper();
 
             }
             catch (Exception)
@@ -95,20 +104,16 @@ namespace FunlabProgramChallenge
 
         }
 
-        private static void InitializeAndSeedDbAsync(IConfiguration configuration)
+        public static void RunSeedData(WebApplication app)
         {
             try
             {
-                using (var context = new AppDbContext())
+                using (var scope = app.Services.CreateScope())
                 {
-                    var canConnect = context.Database.CanConnect();
-                    if (!canConnect)
-                    {
-                        if (AppDbContextInitializer.CreateIfNotExists())
-                        {
-                            AppDbContextInitializer.SeedData();
-                        }
-                    }
+                    var services = scope.ServiceProvider;
+
+                    // Initializes and seeds the database.
+                    AppDbContextInitializer.SeedData(services);
                 }
 
             }

@@ -7,10 +7,7 @@ namespace FunlabProgramChallenge.Repositories
     public class MemberRepository : IMemberRepository
     {
         private AppDbContext _context;
-        public MemberRepository()
-        {
-            _context = new AppDbContext();
-        }
+        
         public MemberRepository(AppDbContext context)
         {
             _context = context;

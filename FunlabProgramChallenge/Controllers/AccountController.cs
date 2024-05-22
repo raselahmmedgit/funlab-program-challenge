@@ -64,22 +64,22 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Login[POST]", $"UserEmail: {model.Email}"));
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Login[POST]", $"UserEmail: {model.UserEmail}"));
                 if (ModelState.IsValid)
                 {
-                    ApplicationUser user = await _userManager.FindByNameAsync(model.Email);
+                    ApplicationUser user = await _userManager.FindByNameAsync(model.UserEmail);
                     if (user != null)
                     {
                         await _signInManager.SignOutAsync();
                         // This doesn't count login failures towards account lockout
                         // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                        var result = await _signInManager.PasswordSignInAsync(model.UserEmail, model.UserPassword, model.RememberMe, lockoutOnFailure: false);
                         if (result.Succeeded)
                         {
                             //var data = await GetUserSignInOutHistoryLocal(model);
                             //await _userLogInOutHistoryManager.CreateLogInOutHistoryAsync(data);
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User logged in, UserEmail: {model.Email}"));
-                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppUserRole.Admin);
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User logged in, UserEmail: {model.UserEmail}"));
+                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRole.Admin);
                             if (isAdmin)
                             {
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
@@ -97,13 +97,13 @@ namespace FunlabProgramChallenge.Controllers
 
                         if (result.IsLockedOut)
                         {
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.UserEmail}"));
                             return View("Lockout");
                         }
                         else
                         {
                             ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.Email}"));
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
                             return View(model);
                         }
                     }
@@ -132,7 +132,7 @@ namespace FunlabProgramChallenge.Controllers
             {
                 _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Logout"));
             }
-            return RedirectToAction("Index", "Login");
+            return RedirectToAction("Index", "Home");
 
         }
 
@@ -144,16 +144,10 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister) {
-                    RegisterViewModel model = new RegisterViewModel();
-                    model.ReturnUrl = returnUrl;
-                    model.RoleName = AppConstants.AppUserRole.Admin.ToString();
-                    return View(model);
-                }
-                else {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
-                }
+                RegisterViewModel model = new RegisterViewModel();
+                model.ReturnUrl = returnUrl;
+                model.RoleName = AppConstants.AppRole.Member.ToString();
+                return View(model);
             }
             catch (Exception ex)
             {
@@ -171,72 +165,64 @@ namespace FunlabProgramChallenge.Controllers
             try
             {
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Register[POST]", ""));
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister)
+                if (ModelState.IsValid)
                 {
-                    if (ModelState.IsValid)
+                    string userName = ((model.UserEmail).Split('@')[0]).Trim(); // you are get here username.
+
+                    var user = new ApplicationUser
                     {
-                        string userName = ((model.Email).Split('@')[0]).Trim(); // you are get here username.
+                        UserName = model.UserEmail,
+                        Email = model.UserEmail
+                    };
 
-                        var user = new ApplicationUser
-                        {
-                            UserName = model.Email,
-                            Email = model.Email
-                        };
+                    _result = await IsEmailExists(user);
+                    if (!_result.Success)
+                    {
+                        ModelState.AddModelError(string.Empty, _result.Error);
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", _result.Error));
+                        return View(model);
+                    }
 
-                        _result = await IsEmailExists(user);
-                        if (!_result.Success)
-                        {
-                            ModelState.AddModelError(string.Empty, _result.Error);
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", _result.Error));
-                            return View(model);
-                        }
+                    var role = new ApplicationRole
+                    {
+                        Id = model.RoleName,
+                        Name = model.RoleName
+                    };
+                    //IdentityResult resultRole = await _roleManager.CreateAsync(role);
+                    var resultRoleName = await _roleManager.GetRoleNameAsync(role);
 
-                        var role = new ApplicationRole
+                    //if (resultRole.Succeeded)
+                    if (!string.IsNullOrEmpty(resultRoleName))
+                    {
+                        var result = await _userManager.CreateAsync(user, model.UserPassword);
+                        if (result.Succeeded)
                         {
-                            Id = model.RoleName,
-                            Name = model.RoleName
-                        };
-                        //IdentityResult resultRole = await _roleManager.CreateAsync(role);
-                        var resultRoleName = await _roleManager.GetRoleNameAsync(role);
+                            //await _userManager.AddToRoleAsync(user, model.RoleName);
+                            await _userManager.AddToRoleAsync(user, resultRoleName);
 
-                        //if (resultRole.Succeeded)
-                        if (!string.IsNullOrEmpty(resultRoleName))
-                        {
-                            var result = await _userManager.CreateAsync(user, model.Password);
-                            if (result.Succeeded)
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
+
+                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRole.Admin);
+                            if (isAdmin)
                             {
-                                //await _userManager.AddToRoleAsync(user, model.RoleName);
-                                await _userManager.AddToRoleAsync(user, resultRoleName);
-
-                                await _signInManager.SignInAsync(user, isPersistent: false);
-                                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.Email}"));
-
-                                var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppUserRole.Admin);
-                                if (isAdmin)
+                                if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
-                                    if (string.IsNullOrEmpty(model.ReturnUrl))
-                                    {
-                                        return RedirectToAction("Index", "Admin");
-                                    }
-                                    return Redirect(model.ReturnUrl);
+                                    return RedirectToAction("Index", "Admin");
                                 }
-                                else
-                                {
-                                    return RedirectToLocal(model.ReturnUrl);
-                                }
-
+                                return Redirect(model.ReturnUrl);
+                            }
+                            else
+                            {
+                                return RedirectToLocal(model.ReturnUrl);
                             }
 
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.Email}"));
-                            AddErrors(result);
                         }
 
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.UserEmail}"));
+                        AddErrors(result);
                     }
-                }
-                else
-                {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
+
                 }
 
             }
@@ -259,15 +245,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister)
-                {
-                    return View();
-                }
-                else
-                {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
-                }
+                return View();
             }
             catch (Exception ex)
             {
@@ -285,48 +263,40 @@ namespace FunlabProgramChallenge.Controllers
             try
             {
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ForgotPassword[POST]", $"UserEmail: {model.Email}"));
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister)
+                if (ModelState.IsValid)
                 {
-                    if (ModelState.IsValid)
+                    bool isValid = true;
+                    var user = await _userManager.FindByNameAsync(model.Email);
+                    if (user == null)
                     {
-                        bool isValid = true;
-                        var user = await _userManager.FindByNameAsync(model.Email);
-                        if (user == null)
-                        {
-                            isValid = false;
-                            // Don't reveal that the user does not exist
-                            ModelState.AddModelError(string.Empty, "Invalid email.");
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
-                            return View(model);
-                        }
+                        isValid = false;
+                        // Don't reveal that the user does not exist
+                        ModelState.AddModelError(string.Empty, "Invalid email.");
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
+                        return View(model);
+                    }
 
-                        //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
-                        //if (!isEmailConfirmed)
-                        //{
-                        //    isValid = false;
-                        //    // Don't reveal that the user email is not confirmed
-                        //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                        //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
-                        //    return View(model);
-                        //}
+                    //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
+                    //if (!isEmailConfirmed)
+                    //{
+                    //    isValid = false;
+                    //    // Don't reveal that the user email is not confirmed
+                    //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
+                    //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
+                    //    return View(model);
+                    //}
 
-                        if (isValid)
-                        {
+                    if (isValid)
+                    {
 
-                            // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
-                            // Send an email with this link
-                            var message = await GenareteForgotPasswordEmailTemplateAsync(user);
-                            //await _emailSender.SendEmailBySendGridAsync(user.Id, model.Email, "Reset Password", message);
-                            return View("ForgotPasswordConfirmation");
-
-                        }
+                        // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
+                        // Send an email with this link
+                        var message = await GenareteForgotPasswordEmailTemplateAsync(user);
+                        //await _emailSender.SendEmailBySendGridAsync(user.Id, model.Email, "Reset Password", message);
+                        return View("ForgotPasswordConfirmation");
 
                     }
-                }
-                else
-                {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
+
                 }
             }
             catch (Exception ex)
@@ -363,22 +333,14 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister)
+                if (userId == null || email == null || code == null)
                 {
-                    if (userId == null || email == null || code == null)
-                    {
-                        return View("Error");
-                    }
-                    else
-                    {
-                        ResetPasswordViewModel model = new ResetPasswordViewModel() { Code = HttpUtility.HtmlDecode(code).Trim(), Email = HttpUtility.HtmlDecode(email).Trim() };
-                        return View(model);
-                    }
+                    return View("Error");
                 }
                 else
                 {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
+                    ResetPasswordViewModel model = new ResetPasswordViewModel() { Code = HttpUtility.HtmlDecode(code).Trim(), Email = HttpUtility.HtmlDecode(email).Trim() };
+                    return View(model);
                 }
             }
             catch (Exception ex)
@@ -397,46 +359,38 @@ namespace FunlabProgramChallenge.Controllers
             try
             {
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ResetPassword[POST]", $"UserEmail: {model.Email}"));
-                var allowedRegister = Convert.ToBoolean(_iConfiguration["AppConfig:AllowedRegister"]);
-                if (allowedRegister)
+                if (ModelState.IsValid)
                 {
-                    if (ModelState.IsValid)
+                    bool isValid = true;
+                    var user = await _userManager.FindByNameAsync(model.Email);
+                    if (user == null)
                     {
-                        bool isValid = true;
-                        var user = await _userManager.FindByNameAsync(model.Email);
-                        if (user == null)
-                        {
-                            isValid = false;
-                            // Don't reveal that the user does not exist
-                            ModelState.AddModelError(string.Empty, "Invalid email.");
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
-                            return View(model);
-                        }
-
-                        //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
-                        //if (!isEmailConfirmed)
-                        //{
-                        //    isValid = false;
-                        //    // Don't reveal that the user email is not confirmed
-                        //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                        //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
-                        //    return View(model);
-                        //}
-
-                        if (isValid)
-                        {
-                            var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
-                            if (result.Succeeded)
-                            {
-                                return View("ResetPasswordConfirmation");
-                            }
-                        }
-
+                        isValid = false;
+                        // Don't reveal that the user does not exist
+                        ModelState.AddModelError(string.Empty, "Invalid email.");
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
+                        return View(model);
                     }
-                }
-                else
-                {
-                    return ErrorView(new Exception(MessageHelper.UnhandledError));
+
+                    //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
+                    //if (!isEmailConfirmed)
+                    //{
+                    //    isValid = false;
+                    //    // Don't reveal that the user email is not confirmed
+                    //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
+                    //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
+                    //    return View(model);
+                    //}
+
+                    if (isValid)
+                    {
+                        var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
+                        if (result.Succeeded)
+                        {
+                            return View("ResetPasswordConfirmation");
+                        }
+                    }
+
                 }
             }
             catch (Exception ex)
@@ -455,7 +409,14 @@ namespace FunlabProgramChallenge.Controllers
         [AllowAnonymous]
         public IActionResult ResetPasswordConfirmation()
         {
-            return View();
+            try
+            {
+                return View();
+            }
+            catch (Exception ex)
+            {
+                return ErrorView(ex);
+            }
         }
 
         [HttpGet]
