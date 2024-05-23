@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="~/FunlabProgramChallenge.styles.css" asp-append-version="true" />
 </head>
 <body>
+    <div id="appPreLoader"></div>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
@@ -44,6 +45,19 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/app.js" asp-append-version="true"></script>
+    <script type="text/javascript">
+        !(function ($) {
+            // App Preloader
+            $(window).on('load', function () {
+                if ($('#appPreLoader').length) {
+                    $('#appPreLoader').delay(100).fadeOut('slow', function () {
+                        //$(this).remove();
+                    });
+                }
+            });
+        })(jQuery);
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

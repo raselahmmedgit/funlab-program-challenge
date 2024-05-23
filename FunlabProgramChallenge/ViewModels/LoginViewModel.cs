@@ -17,6 +17,6 @@ namespace FunlabProgramChallenge.ViewModels
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
 
-        public string ReturnUrl { get; set; }
+        public string? ReturnUrl { get; set; }
     }
 }

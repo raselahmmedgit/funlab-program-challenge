@@ -8,6 +8,8 @@ using FunlabProgramChallenge.Web.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Identity.Client;
+using Stripe;
 
 namespace FunlabProgramChallenge
 {
@@ -20,8 +22,18 @@ namespace FunlabProgramChallenge
                 // Add services to the container.
                 builder.Services.AddControllersWithViews();
 
+                //Add our Config object so it can be injected
+                builder.Services.Configure<ConnectionStrings>(builder.Configuration.GetSection(ConnectionStrings.Name));
+                builder.Services.Configure<SmsConfig>(builder.Configuration.GetSection(SmsConfig.Name));
+                builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection(EmailConfig.Name));
+                builder.Services.Configure<AppConfig>(builder.Configuration.GetSection(AppConfig.Name));
+                builder.Services.Configure<StripePaymentGatewayConfig>(builder.Configuration.GetSection(StripePaymentGatewayConfig.Name));
+
                 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
                 builder.Services.AddScoped<IMemberManager, MemberManager>();
+
+                builder.Services.AddScoped<IEmailSenderManager, EmailSenderManager>();
+                builder.Services.AddScoped<IStripePaymentGatewayManager, StripePaymentGatewayManager>();
 
                 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 

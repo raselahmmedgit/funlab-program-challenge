@@ -24,10 +24,22 @@
             public static string Member = "1e500ab8-4bd1-4dee-a7e4-d4f7c7a45b28";
         }
 
+        public static class AppRoleName
+        {
+            public static string Admin = "Admin";
+            public static string Member = "Member";
+        }
+
         public static class AppUser
         {
             public static string Admin = "c79fa52e-a3db-4bde-be90-7d5dd35836de";
             public static string Member = "28909eda-0b7e-44a6-a565-9f38a6641923";
+        }
+
+        public static class AppUserName
+        {
+            public static string Admin = "admin@mail.com";
+            public static string Member = "member@mail.com";
         }
     }
 

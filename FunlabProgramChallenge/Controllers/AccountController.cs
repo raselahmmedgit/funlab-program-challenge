@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using FunlabProgramChallenge.ViewModels;
 using System.Web;
+using FunlabProgramChallenge.Managers;
 
 namespace FunlabProgramChallenge.Controllers
 {
@@ -15,9 +16,13 @@ namespace FunlabProgramChallenge.Controllers
     {
         #region Global Variable Declaration
         private readonly ILogger<AccountController> _iLogger;
-        private UserManager<ApplicationUser> _userManager;
-        private SignInManager<ApplicationUser> _signInManager;
-        private RoleManager<ApplicationRole> _roleManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<ApplicationRole> _roleManager;
+        private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
+        private readonly IStripePaymentGatewayManager _iStripePaymentGatewayManager;
+        private readonly IEmailSenderManager _iEmailSenderManager;
+        private readonly IMemberManager _iMemberManager;
         private readonly IConfiguration _iConfiguration;
         #endregion
 
@@ -25,13 +30,21 @@ namespace FunlabProgramChallenge.Controllers
         public AccountController(ILogger<AccountController> iLogger, UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
+            IPasswordHasher<ApplicationUser> passwordHasher,
+            IStripePaymentGatewayManager iStripePaymentGatewayManager,
+            IEmailSenderManager iEmailSenderManager,
+            IMemberManager iMemberManager,
             IConfiguration iConfiguration)
         {
+            _iLogger = iLogger;
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
+            _passwordHasher = passwordHasher;
+            _iStripePaymentGatewayManager = iStripePaymentGatewayManager;
+            _iEmailSenderManager = iEmailSenderManager;
+            _iMemberManager = iMemberManager;
             _iConfiguration = iConfiguration;
-            _iLogger = iLogger;
         }
         #endregion
 
@@ -59,8 +72,8 @@ namespace FunlabProgramChallenge.Controllers
         // POST: /Account/Login
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model)
+        //[ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login([FromBody] LoginViewModel model)
         {
             try
             {
@@ -76,21 +89,30 @@ namespace FunlabProgramChallenge.Controllers
                         var result = await _signInManager.PasswordSignInAsync(model.UserEmail, model.UserPassword, model.RememberMe, lockoutOnFailure: false);
                         if (result.Succeeded)
                         {
+                            model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
+
                             //var data = await GetUserSignInOutHistoryLocal(model);
                             //await _userLogInOutHistoryManager.CreateLogInOutHistoryAsync(data);
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User logged in, UserEmail: {model.UserEmail}"));
-                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRole.Admin);
+                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRoleName.Admin);
                             if (isAdmin)
                             {
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
-                                    return RedirectToAction("Index", "Admin");
+                                    _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
+                                    return Json(_result);
+                                    //return RedirectToAction("Index", "Admin");
                                 }
-                                return Redirect(model.ReturnUrl);
+
+                                _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
+                                return Json(_result);
+                                //return Redirect(model.ReturnUrl);
                             }
                             else
                             {
-                                return RedirectToLocal(model.ReturnUrl);
+                                _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
+                                return Json(_result);
+                                //return RedirectToLocal(model.ReturnUrl);
                             }
 
                         }
@@ -98,41 +120,65 @@ namespace FunlabProgramChallenge.Controllers
                         if (result.IsLockedOut)
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.UserEmail}"));
-                            return View("Lockout");
+                            _result = Result.Fail(MessageHelper.LogInFail);
+                            return Json(_result);
+                            //return View("Lockout");
                         }
                         else
                         {
-                            ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                            //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
-                            return View(model);
+                            _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                            return Json(_result);
+                            //return View(model);
                         }
                     }
+                    else
+                    {
+                        //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
+                        _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                        return Json(_result);
+                        //return View(model);
+                    }
+                }
+                else {
+                    _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
+                    return Json(_result);
                 }
 
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, MessageHelper.Error);
+                //ModelState.AddModelError(string.Empty, MessageHelper.Error);
                 _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Login[POST]"));
             }
 
-            // If we got this far, something failed, redisplay form
-            return View(model);
+            _result = Result.Fail(MessageHelper.LogInFail);
+            return Json(_result);
+            //return View(model);
         }
 
-        [HttpGet]
+        //[HttpGet]
         [Authorize]
         public async Task<IActionResult> Logout()
         {
             try
             {
                 await _signInManager.SignOutAsync();
+
+                _result = Result.Ok(MessageHelper.LogOut);
+                return Json(_result);
             }
             catch (Exception ex)
             {
                 _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Logout"));
+                //_result = Result.Fail(MessageHelper.LogOutFail);
+                //return Json(_result);
             }
-            return RedirectToAction("Index", "Home");
+
+            _result = Result.Ok(MessageHelper.LogIn, "/Home/Index");
+            return Json(_result);
+            //return RedirectToAction("Index", "Home");
 
         }
 
@@ -146,7 +192,7 @@ namespace FunlabProgramChallenge.Controllers
             {
                 RegisterViewModel model = new RegisterViewModel();
                 model.ReturnUrl = returnUrl;
-                model.RoleName = AppConstants.AppRole.Member.ToString();
+                model.RoleName = AppConstants.AppRoleName.Member.ToString();
                 return View(model);
             }
             catch (Exception ex)
@@ -159,34 +205,58 @@ namespace FunlabProgramChallenge.Controllers
         // POST: /Account/Register
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        //[ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register([FromBody] RegisterViewModel model)
         {
             try
             {
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Register[POST]", ""));
                 if (ModelState.IsValid)
                 {
+
+
+                    #region Stripe Payment Gateway
+
+                    var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
+                    if (!resultStripePayment.Success)
+                    {
+                        //ModelState.AddModelError(string.Empty, resultStripePayment.Message);
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
+                        _result = Result.Fail(resultStripePayment.Message);
+                        return Json(_result);
+                        //return View(model);
+                    }
+
+                    #endregion
+
                     string userName = ((model.UserEmail).Split('@')[0]).Trim(); // you are get here username.
 
                     var user = new ApplicationUser
                     {
+                        Id = Guid.NewGuid().ToString(),
                         UserName = model.UserEmail,
                         Email = model.UserEmail
                     };
 
-                    _result = await IsEmailExists(user);
-                    if (!_result.Success)
+                    var resultEmailExists = await IsEmailExistsAsync(user);
+                    if (!resultEmailExists.Success)
                     {
-                        ModelState.AddModelError(string.Empty, _result.Error);
-                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", _result.Error));
-                        return View(model);
+                        //ModelState.AddModelError(string.Empty, resultEmailExists.Message);
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultEmailExists.Message));
+                        _result = Result.Fail(resultEmailExists.Message);
+                        return Json(_result);
+                        //return View(model);
                     }
 
+                    //var role = new ApplicationRole
+                    //{
+                    //    Id = model.RoleName,
+                    //    Name = model.RoleName
+                    //};
                     var role = new ApplicationRole
                     {
-                        Id = model.RoleName,
-                        Name = model.RoleName
+                        Id = AppConstants.AppRole.Member.ToString(),
+                        Name = AppConstants.AppRoleName.Member.ToString()
                     };
                     //IdentityResult resultRole = await _roleManager.CreateAsync(role);
                     var resultRoleName = await _roleManager.GetRoleNameAsync(role);
@@ -194,35 +264,67 @@ namespace FunlabProgramChallenge.Controllers
                     //if (resultRole.Succeeded)
                     if (!string.IsNullOrEmpty(resultRoleName))
                     {
+                        model.UserPassword = string.IsNullOrEmpty(model.UserPassword) ? "Qwer!234" : model.UserPassword;
+
                         var result = await _userManager.CreateAsync(user, model.UserPassword);
                         if (result.Succeeded)
                         {
+                            model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
+
                             //await _userManager.AddToRoleAsync(user, model.RoleName);
                             await _userManager.AddToRoleAsync(user, resultRoleName);
 
                             await _signInManager.SignInAsync(user, isPersistent: false);
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
 
-                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRole.Admin);
+                            #region Create Member
+
+                            var resultMember = await CreateMemberAsync(model);
+                            if (!resultMember.Success)
+                            {
+                                //ModelState.AddModelError(string.Empty, resultMember.Message);
+                                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultMember.Message));
+                                _result = Result.Fail(resultMember.Message);
+                                return Json(_result);
+                                //return View(model);
+                            }
+
+                            #endregion
+
+                            var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRoleName.Admin);
                             if (isAdmin)
                             {
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
-                                    return RedirectToAction("Index", "Admin");
+                                    _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
+                                    return Json(_result);
+                                    //return RedirectToAction("Index", "Admin");
                                 }
-                                return Redirect(model.ReturnUrl);
+
+                                _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
+                                return Json(_result);
+                                //return Redirect(model.ReturnUrl);
                             }
                             else
                             {
-                                return RedirectToLocal(model.ReturnUrl);
+                                _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
+                                return Json(_result);
+                                //return RedirectToLocal(model.ReturnUrl);
                             }
 
                         }
 
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.UserEmail}"));
-                        AddErrors(result);
+                        _result = Result.Fail(MessageHelper.RegisterFail);
+                        return Json(_result);
+                        //AddErrors(result);
                     }
 
+                }
+                else
+                {
+                    _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
+                    return Json(_result);
                 }
 
             }
@@ -232,191 +334,9 @@ namespace FunlabProgramChallenge.Controllers
                 _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Register[POST]"));
             }
 
-            // If we got this far, something failed, redisplay form
-            return View(model);
-        }
-
-
-        //
-        // GET: /Account/ForgotPassword
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult ForgotPassword()
-        {
-            try
-            {
-                return View();
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
-        }
-
-        //
-        // POST: /Account/ForgotPassword
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
-        {
-            try
-            {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ForgotPassword[POST]", $"UserEmail: {model.Email}"));
-                if (ModelState.IsValid)
-                {
-                    bool isValid = true;
-                    var user = await _userManager.FindByNameAsync(model.Email);
-                    if (user == null)
-                    {
-                        isValid = false;
-                        // Don't reveal that the user does not exist
-                        ModelState.AddModelError(string.Empty, "Invalid email.");
-                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
-                        return View(model);
-                    }
-
-                    //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
-                    //if (!isEmailConfirmed)
-                    //{
-                    //    isValid = false;
-                    //    // Don't reveal that the user email is not confirmed
-                    //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                    //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ForgotPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
-                    //    return View(model);
-                    //}
-
-                    if (isValid)
-                    {
-
-                        // For more information on how to enable account confirmation and password reset please visit http://go.microsoft.com/fwlink/?LinkID=532713
-                        // Send an email with this link
-                        var message = await GenareteForgotPasswordEmailTemplateAsync(user);
-                        //await _emailSender.SendEmailBySendGridAsync(user.Id, model.Email, "Reset Password", message);
-                        return View("ForgotPasswordConfirmation");
-
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ForgotPassword[POST]"));
-            }
-
-            // If we got this far, something failed, redisplay form
-            return View(model);
-        }
-
-        //
-        // GET: /Account/ForgotPasswordConfirmation
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult ForgotPasswordConfirmation()
-        {
-            try
-            {
-                return View();
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
-        }
-
-        //
-        // GET: /Account/ResetPassword
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult ResetPassword(string userId, string email, string code = null)
-        {
-            try
-            {
-                if (userId == null || email == null || code == null)
-                {
-                    return View("Error");
-                }
-                else
-                {
-                    ResetPasswordViewModel model = new ResetPasswordViewModel() { Code = HttpUtility.HtmlDecode(code).Trim(), Email = HttpUtility.HtmlDecode(email).Trim() };
-                    return View(model);
-                }
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
-        }
-
-        //
-        // POST: /Account/ResetPassword
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
-        {
-            try
-            {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("ResetPassword[POST]", $"UserEmail: {model.Email}"));
-                if (ModelState.IsValid)
-                {
-                    bool isValid = true;
-                    var user = await _userManager.FindByNameAsync(model.Email);
-                    if (user == null)
-                    {
-                        isValid = false;
-                        // Don't reveal that the user does not exist
-                        ModelState.AddModelError(string.Empty, "Invalid email.");
-                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Invalid email, UserEmail: {model.Email}"));
-                        return View(model);
-                    }
-
-                    //var isEmailConfirmed = await _userManager.IsEmailConfirmedAsync(user);
-                    //if (!isEmailConfirmed)
-                    //{
-                    //    isValid = false;
-                    //    // Don't reveal that the user email is not confirmed
-                    //    ModelState.AddModelError(string.Empty, "Email is not confirmed.");
-                    //    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("ResetPassword[POST]", $"Email is not confirmed, UserEmail: {model.Email}"));
-                    //    return View(model);
-                    //}
-
-                    if (isValid)
-                    {
-                        var result = await _userManager.ResetPasswordAsync(user, model.Code, model.Password);
-                        if (result.Succeeded)
-                        {
-                            return View("ResetPasswordConfirmation");
-                        }
-                    }
-
-                }
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ResetPassword[POST]"));
-            }
-
-            // If we got this far, something failed, redisplay form
-            return View(model);
-        }
-
-        //
-        // GET: /Account/ResetPasswordConfirmation
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult ResetPasswordConfirmation()
-        {
-            try
-            {
-                return View();
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
+            _result = Result.Fail(MessageHelper.RegisterFail);
+            return Json(_result);
+            //return View(model);
         }
 
         [HttpGet]
@@ -435,7 +355,89 @@ namespace FunlabProgramChallenge.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        private async Task<Result> IsEmailExists(ApplicationUser user)
+        private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
+        {
+            try
+            {
+                string cardExpirationMonth = ((registerViewModel.CardExpiration).Split('/')[0]).Trim();
+                string cardExpirationYear = ((registerViewModel.CardExpiration).Split('/')[1]).Trim();
+
+                var stripePaymentGatewayViewModel = new StripePaymentGatewayViewModel() {
+                    CardNumber = registerViewModel.CardNumber,
+                    CardCvc = registerViewModel.CardCvc,
+                    CardName = registerViewModel.UserName,
+                    CardExpirationMonth = cardExpirationMonth,
+                    CardExpirationYear = cardExpirationYear,
+                    CardCurrencyCode = registerViewModel.CardCountry,
+                    CustomerEmailAddress = registerViewModel.UserEmail,
+                    CustomerPhoneNumber = "01911-045573",
+                    CustomerName = registerViewModel.UserName,
+                    CustomerDescription = "this is test",
+                    CardAmount = 10,
+                };
+
+                var result = await _iStripePaymentGatewayManager.ProcessAsync(stripePaymentGatewayViewModel);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                //ModelState.AddModelError(string.Empty, MessageHelper.Error);
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ProcessStripePaymentGatewayAsync"));
+                return StripePaymentGatewayResult.Fail(MessageHelper.Error);
+            }
+        }
+
+        private async Task<Result> CreateMemberAsync(RegisterViewModel registerViewModel)
+        {
+            try
+            {
+                string cardExpirationMonth = ((registerViewModel.CardExpiration).Split('/')[0]).Trim();
+                string cardExpirationYear = ((registerViewModel.CardExpiration).Split('/')[1]).Trim();
+
+                ApplicationUser user = await _userManager.GetUserAsync(HttpContext.User);
+
+                var memberViewModel = new MemberViewModel()
+                {
+                    UserId = user.Id,
+                    FirstName = registerViewModel.UserName,
+                    LastName = registerViewModel.UserName,
+                    EmailAddress = registerViewModel.UserEmail,
+                    PhoneNumber = "01911-045573",
+                    PresentAddress = "Dhaka",
+                    PermanentAddress = "Dhaka",
+                    CardName = registerViewModel.UserName,
+                    CardNumber = registerViewModel.CardNumber,
+                    CardExpirationMonth = cardExpirationMonth,
+                    CardExpirationYear = cardExpirationYear,
+                    CardCvc = registerViewModel.CardCvc,
+                    CardCountry = registerViewModel.CardCountry
+                };
+
+                var result = await _iMemberManager.InsertMemberAsync(memberViewModel);
+
+                var emailMessage = new EmailMessage()
+                {
+                    ReceiverEmail = registerViewModel.UserEmail,
+                    ReceiverName = registerViewModel.UserName,
+                    Subject = "Funlab sign in password",
+                    Body = EmailTemplateHelper.GetEmailTemplate("Funlab sign in password", "Funlab system-generated sign in password", registerViewModel.UserPassword),
+                    IsHtml = true
+                };
+
+                var resultSendEmail = await _iEmailSenderManager.SendEmailMessage(emailMessage);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                //ModelState.AddModelError(string.Empty, MessageHelper.Error);
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "ProcessStripePaymentGatewayAsync"));
+                return Result.Fail(MessageHelper.Error);
+            }
+        }
+
+        private async Task<Result> IsEmailExistsAsync(ApplicationUser user)
         {
             try
             {
@@ -453,8 +455,8 @@ namespace FunlabProgramChallenge.Controllers
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, MessageHelper.Error);
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "IsEmailExists"));
+                //ModelState.AddModelError(string.Empty, MessageHelper.Error);
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "IsEmailExistsAsync"));
                 return Result.Fail(MessageHelper.Error);
             }
         }

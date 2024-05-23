@@ -122,6 +122,22 @@ namespace FunlabProgramChallenge.Helpers
             return message;
         }
 
+        public static string ModelStateErrorFirstFormat(ModelStateDictionary modelStateDictionary)
+        {
+            string message = string.Empty;
+
+            foreach (var modelStateValues in modelStateDictionary.Values)
+            {
+                if (modelStateValues.Errors.Any())
+                {
+                    var modelError = modelStateValues.Errors.FirstOrDefault();
+                    message += modelError.ErrorMessage;
+                }
+            }
+
+            return message;
+        }
+
         public static ErrorPageViewModel ModelStateError(ModelStateDictionary modelStateDictionary)
         {
             var errorPageViewModel = new ErrorPageViewModel();

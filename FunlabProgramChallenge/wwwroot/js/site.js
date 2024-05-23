@@ -9,25 +9,52 @@
 
     var _submit = function () {
 
-        var userEmail = $('#UserEmail').val();
-        var userPassword = $('#UserPassword').val();
+        let dataObj = {
+            UserEmail: $("#UserEmail").val(),
+            UserPassword: $("#UserPassword").val()
+        }
+
+        //let authorization = ('Bearer ' + localStorage.getItem('token'));
 
         $.ajax({
-            type: "POST",
-            url: "/Account/Login",
-            data: { UserEmail: userEmail, UserPassword: userPassword },
-            dataType: "html",
+            type: 'POST',
+            url: '/Account/Login',
+            data: JSON.stringify(dataObj),
+
+            dataType: 'json',
+            contentType: 'application/json',
+            //headers: { "Authorization": authorization },
             beforeSend: function () {
-                console.log('beforeSend');
+                App.LoaderShow();
             },
             success: function (result) {
                 debugger;
+                //console.log(result);
                 if (result != undefined || result != null) {
-                    
+
+                    if (result.success == true) {
+                        //console.log(result.message);
+                        $('.message').addClass('text-success');
+                        $('.message').html('');
+                        $('.message').html(result.message);
+                        window.location.href = (window.location.origin + result.redirectUrl);
+                    }
+                    else {
+                        //console.log(result.message);
+                        $('.message').addClass('text-danger');
+                        $('.message').html('');
+                        $('.message').html(result.message);
+                    }
+
+                    //window.location.reload();
                 }
+                //check null
+            },
+            complete: function (xhr, status) {
+                App.LoaderHide();
             },
             error: function (req, status, error) {
-                console.log(error);
+                App.LoaderHide();
             }
         });
 
@@ -50,31 +77,54 @@ var SignUp = function () {
 
     var _submit = function () {
 
-        var userName = $('#UserName').val();
-        var userEmail = $('#UserEmail').val();
-        //var userPassword = $('#UserPassword').val();
-        //var userConfirmPassword = $('#UserConfirmPassword').val();
-        var cardNumber = $('#CardNumber').val();
-        var cardExpiration = $('#CardExpiration').val();
-        var cardCvc = $('#CardCvc').val();
-        var cardCountry = $('#CardCountry').val();
+        let dataObj = {
+            UserName: $("#UserName").val(),
+            UserEmail: $("#UserEmail").val(),
+            UserPassword: $("#UserPassword").val(),
+            UserConfirmPassword: $("#UserConfirmPassword").val(),
+            CardNumber: $("#CardNumber").val(),
+            CardExpiration: $("#CardExpiration").val(),
+            CardCvc: $("#CardCvc").val(),
+            CardCountry: $("#CardCountry").val()
+        }
 
         $.ajax({
             type: "POST",
             url: "/Account/Register",
-            data: { UserName: userName, UserEmail: userEmail, CardNumber: cardNumber, CardExpiration: cardExpiration, CardCvc: cardCvc, CardCountry: cardCountry },
-            dataType: "html",
+            data: JSON.stringify(dataObj),
+
+            dataType: 'json',
+            contentType: 'application/json',
             beforeSend: function () {
-                console.log('beforeSend');
+                App.LoaderShow();
             },
             success: function (result) {
                 debugger;
+                //console.log(result);
                 if (result != undefined || result != null) {
 
+                    if (result.success == true) {
+                        //console.log(result.message);
+                        $('.message').addClass('text-success');
+                        $('.message').html('');
+                        $('.message').html(result.message);
+                        window.location.href = (window.location.origin + result.redirectUrl);
+                    }
+                    else {
+                        //console.log(result.message);
+                        $('.message').html('');
+                        $('.message').html(result.message);
+                    }
+
+                    //window.location.reload();
                 }
+                //check null
+            },
+            complete: function (xhr, status) {
+                App.LoaderHide();
             },
             error: function (req, status, error) {
-                console.log(error);
+                App.LoaderHide();
             }
         });
     };
@@ -83,6 +133,7 @@ var SignUp = function () {
         InitSignUp: initSignUp
     };
 }();
+
 
 var WebCalculator = function () {
     var initWebCalculator = function () {

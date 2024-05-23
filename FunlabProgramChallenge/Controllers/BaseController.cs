@@ -63,7 +63,7 @@ namespace FunlabProgramChallenge.Controllers
 
         internal IActionResult JsonResult(Result result)
         {
-            _logger.LogError(result.Error, "JsonResult");
+            _logger.LogError(result.Message, "JsonResult");
             return ModalHelper.Json(result);
         }
 

@@ -15,11 +15,11 @@ namespace FunlabProgramChallenge.Helpers
 
             if (result.Success)
             {
-                strContent = (Boolean.TrueString.ToString() + "_" + result.ErrorType + "_" + result.Error).ToString();
+                strContent = (Boolean.TrueString.ToString() + "_" + result.MessageType + "_" + result.Message).ToString();
             }
             else
             {
-                strContent = (Boolean.FalseString.ToString() + "_" + result.ErrorType + "_" + result.Error).ToString();
+                strContent = (Boolean.FalseString.ToString() + "_" + result.MessageType + "_" + result.Message).ToString();
             }
 
             return strContent;
@@ -63,8 +63,8 @@ namespace FunlabProgramChallenge.Helpers
             var json = new
             {
                 success = result.Success,
-                error = result.Error,
-                errortype = result.ErrorType
+                message = result.Message,
+                messagetype = result.MessageType
             };
 
             return new JsonResult(json);
@@ -75,8 +75,8 @@ namespace FunlabProgramChallenge.Helpers
             var json = new
             {
                 success = false,
-                error = MessageHelper.MessageTypeDanger,
-                errortype = MessageHelper.Error
+                message = MessageHelper.MessageTypeDanger,
+                messagetype = MessageHelper.Error
             };
 
             return new JsonResult(json);
@@ -90,8 +90,8 @@ namespace FunlabProgramChallenge.Helpers
             var json = new
             {
                 success = false,
-                error = MessageHelper.MessageTypeDanger,
-                errortype = errorMessage
+                message = MessageHelper.MessageTypeDanger,
+                messagetype = errorMessage
             };
 
             return new JsonResult(json);
@@ -104,8 +104,8 @@ namespace FunlabProgramChallenge.Helpers
             var json = new
             {
                 success = false,
-                error = MessageHelper.MessageTypeDanger,
-                errortype = errorMessage
+                message = MessageHelper.MessageTypeDanger,
+                messagetype = errorMessage
             };
 
             return new JsonResult(json);
@@ -116,8 +116,8 @@ namespace FunlabProgramChallenge.Helpers
             var json = new
             {
                 success = false,
-                error = MessageHelper.MessageTypeWarning,
-                errortype = MessageHelper.NullError
+                message = MessageHelper.MessageTypeWarning,
+                messagetype = MessageHelper.NullError
             };
 
             return new JsonResult(json);
