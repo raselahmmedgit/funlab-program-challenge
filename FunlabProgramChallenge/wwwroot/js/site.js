@@ -88,6 +88,8 @@ var SignUp = function () {
             CardCountry: $("#CardCountry").val()
         }
 
+        //let authorization = ('Bearer ' + localStorage.getItem('token'));
+
         $.ajax({
             type: "POST",
             url: "/Account/Register",
@@ -95,6 +97,7 @@ var SignUp = function () {
 
             dataType: 'json',
             contentType: 'application/json',
+            //headers: { "Authorization": authorization },
             beforeSend: function () {
                 App.LoaderShow();
             },

@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 using FunlabProgramChallenge.ViewModels;
 using System.Web;
 using FunlabProgramChallenge.Managers;
+using System.IdentityModel.Tokens.Jwt;
+using FunlabProgramChallenge.JwtGenerator;
 
 namespace FunlabProgramChallenge.Controllers
 {
@@ -20,6 +22,7 @@ namespace FunlabProgramChallenge.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
+        private readonly ITokenGenerator _iTokenGenerator;
         private readonly IStripePaymentGatewayManager _iStripePaymentGatewayManager;
         private readonly IEmailSenderManager _iEmailSenderManager;
         private readonly IMemberManager _iMemberManager;
@@ -31,6 +34,7 @@ namespace FunlabProgramChallenge.Controllers
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             IPasswordHasher<ApplicationUser> passwordHasher,
+            ITokenGenerator iTokenGenerator,
             IStripePaymentGatewayManager iStripePaymentGatewayManager,
             IEmailSenderManager iEmailSenderManager,
             IMemberManager iMemberManager,
@@ -49,6 +53,39 @@ namespace FunlabProgramChallenge.Controllers
         #endregion
 
         #region Actions
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> LoginTokenGenerator([FromBody] LoginViewModel model)
+        {
+            try
+            {
+                var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                if (token.AccessToken != null)
+                {
+                    var tokenData = new
+                    {
+                        Token = new JwtSecurityTokenHandler().WriteToken(token.AccessToken),
+                        RefreshToken = token.RefreshTokenModel.RefreshToken,
+                        ExpiryDate = token.ExpiryDate,
+                        Message = "Authorized"
+                    };
+
+                    _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
+                    return Json(_result);
+                }
+
+                _result = Result.Fail(MessageHelper.Unauthorized);
+                return Json(_result);
+            }
+            catch (Exception ex)
+            {
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LoginTokenGenerator[GET]"));
+            }
+
+            _result = Result.Fail(MessageHelper.Unauthorized);
+            return Json(_result);
+        }
 
         //
         // GET: /Account/Login

@@ -47,6 +47,8 @@
         public static string UnhandledError = "We are facing some problem while processing the current request. Please try again later.";
         public static string UnAuthenticated = "You are not authenticated user.";
         public static string Authenticated = "You are authenticated user.";
+        public static string Unauthorized = "You are not authenticated user.";
+        public static string Authorized = "You are authenticated user.";
         public static string NullError = "Requested object could not be found.";
         public static string NullReferenceExceptionError = "There are one or more required fields are missing.";
 

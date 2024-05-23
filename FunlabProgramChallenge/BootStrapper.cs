@@ -1,15 +1,19 @@
 ﻿using FunlabProgramChallenge.Core.Identity;
+using FunlabProgramChallenge.JwtGenerator;
 using FunlabProgramChallenge.Managers;
 using FunlabProgramChallenge.Model;
 using FunlabProgramChallenge.Models;
 using FunlabProgramChallenge.Repositories;
 using FunlabProgramChallenge.Utility;
 using FunlabProgramChallenge.Web.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Identity.Client;
+using Microsoft.IdentityModel.Tokens;
 using Stripe;
+using System.Text;
 
 namespace FunlabProgramChallenge
 {
@@ -34,6 +38,8 @@ namespace FunlabProgramChallenge
 
                 builder.Services.AddScoped<IEmailSenderManager, EmailSenderManager>();
                 builder.Services.AddScoped<IStripePaymentGatewayManager, StripePaymentGatewayManager>();
+
+                builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
 
                 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
@@ -105,6 +111,37 @@ namespace FunlabProgramChallenge
                 //);
                 //call this in case you need aspnet-user-authtype/aspnet-user-identity
                 builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+                #region JwtToken
+
+                JwtTokenOptions jwtTokenOptions = new JwtTokenOptions();
+                var jwtTokenSectiion = builder.Configuration.GetSection(JwtTokenOptions.Token);
+                jwtTokenSectiion.Bind(jwtTokenOptions);
+                builder.Services.Configure<JwtTokenOptions>(jwtTokenSectiion);
+                builder.Services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                }).AddJwtBearer(options =>
+                {
+                    options.SaveToken = true;
+                    options.RequireHttpsMetadata = false;
+                    options.TokenValidationParameters = new TokenValidationParameters()
+                    {
+                        ValidateIssuer = true,
+                        ValidateAudience = true,
+                        ValidateLifetime = true,
+                        ValidateIssuerSigningKey = true,
+                        ClockSkew = TimeSpan.Zero,
+
+                        ValidAudience = builder.Configuration["JwtToken:ValidAudience"],
+                        ValidIssuer = builder.Configuration["JwtToken:ValidIssuer"],
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtToken:Secret"]))
+                    };
+                });
+
+                #endregion
 
                 builder.Services.RegisterAutoMapper();
 
