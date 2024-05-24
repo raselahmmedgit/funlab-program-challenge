@@ -1,15 +1,14 @@
 ﻿using FunlabProgramChallenge.Core;
 using FunlabProgramChallenge.Core.Identity;
 using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.JwtGenerator;
+using FunlabProgramChallenge.Managers;
 using FunlabProgramChallenge.Utility;
+using FunlabProgramChallenge.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using FunlabProgramChallenge.ViewModels;
-using System.Web;
-using FunlabProgramChallenge.Managers;
 using System.IdentityModel.Tokens.Jwt;
-using FunlabProgramChallenge.JwtGenerator;
 
 namespace FunlabProgramChallenge.Controllers
 {
@@ -56,7 +55,7 @@ namespace FunlabProgramChallenge.Controllers
 
         #region Actions
 
-        [HttpGet]
+        [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> LoginTokenGenerator([FromBody] LoginViewModel model)
         {
@@ -74,37 +73,19 @@ namespace FunlabProgramChallenge.Controllers
                     };
 
                     _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
-                    return Json(_result);
+                    return Ok(_result);
                 }
 
                 _result = Result.Fail(MessageHelper.Unauthorized);
-                return Json(_result);
+                return NotFound(_result);
             }
             catch (Exception ex)
             {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LoginTokenGenerator[GET]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LoginTokenGenerator[POST]"));
             }
 
             _result = Result.Fail(MessageHelper.Unauthorized);
-            return Json(_result);
-        }
-
-        //
-        // GET: /Account/Login
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Login(string returnUrl = null)
-        {
-            try
-            {
-                LoginViewModel model = new LoginViewModel();
-                model.ReturnUrl = returnUrl;
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
+            return BadRequest(_result);
         }
 
         //
@@ -213,25 +194,6 @@ namespace FunlabProgramChallenge.Controllers
         }
 
         //
-        // GET: /Account/Register
-        [HttpGet]
-        [AllowAnonymous]
-        public IActionResult Register(string returnUrl = null)
-        {
-            try
-            {
-                RegisterViewModel model = new RegisterViewModel();
-                model.ReturnUrl = returnUrl;
-                model.RoleName = AppConstants.AppRoleName.Member.ToString();
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                return ErrorView(ex);
-            }
-        }
-
-        //
         // POST: /Account/Register
         [HttpPost]
         [AllowAnonymous]
@@ -243,20 +205,6 @@ namespace FunlabProgramChallenge.Controllers
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Register[POST]", ""));
                 if (ModelState.IsValid)
                 {
-
-
-                    #region Stripe Payment Gateway
-
-                    var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
-                    if (!resultStripePayment.Success)
-                    {
-                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
-                        _result = Result.Fail(resultStripePayment.Message);
-                        return Json(_result);
-                    }
-
-                    #endregion
-
                     string userName = ((model.UserEmail).Split('@')[0]).Trim(); // you are get here username.
 
                     var user = new ApplicationUser
@@ -273,6 +221,18 @@ namespace FunlabProgramChallenge.Controllers
                         _result = Result.Fail(resultEmailExists.Message);
                         return Json(_result);
                     }
+
+                    #region Stripe Payment Gateway
+
+                    var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
+                    if (!resultStripePayment.Success)
+                    {
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
+                        _result = Result.Fail(resultStripePayment.Message);
+                        return Json(_result);
+                    }
+
+                    #endregion
 
                     //var role = new ApplicationRole
                     //{
@@ -357,7 +317,6 @@ namespace FunlabProgramChallenge.Controllers
             _result = Result.Fail(MessageHelper.RegisterFail);
             return Json(_result);
         }
-
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
         {

@@ -1,5 +1,7 @@
 ﻿using FunlabProgramChallenge.Models;
+using FunlabProgramChallenge.Utility;
 using FunlabProgramChallenge.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
 
@@ -24,6 +26,37 @@ namespace FunlabProgramChallenge.Controllers
             try
             {
                 return View();
+            }
+            catch (Exception ex)
+            {
+                return ErrorView(ex);
+            }
+        }
+
+
+        [HttpGet]
+        public IActionResult Login(string returnUrl = null)
+        {
+            try
+            {
+                LoginViewModel model = new LoginViewModel();
+                model.ReturnUrl = returnUrl;
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                return ErrorView(ex);
+            }
+        }
+
+        public IActionResult Register(string returnUrl = null)
+        {
+            try
+            {
+                RegisterViewModel model = new RegisterViewModel();
+                model.ReturnUrl = returnUrl;
+                model.RoleName = AppConstants.AppRoleName.Member.ToString();
+                return View(model);
             }
             catch (Exception ex)
             {

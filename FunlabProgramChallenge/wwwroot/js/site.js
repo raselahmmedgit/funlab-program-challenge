@@ -1,4 +1,31 @@
-﻿var SignIn = function () {
+﻿var AppLocalStorage = function () {
+
+    var _get = function (key) {
+        localStorage.getItem(key);
+    };
+
+    var _set = function (key, value) {
+        localStorage.setItem(key, value);
+    };
+
+    var _getJwtToken = function () {
+        localStorage.getItem('jwt_token');
+    };
+
+    var _setJwtToken = function (value) {
+        localStorage.setItem('jwt_token', value);
+    };
+
+    return {
+        Get: _get,
+        Set: _set,
+        GetJwtToken: _getJwtToken,
+        SetJwtToken: _setJwtToken
+    };
+}();
+
+
+var SignIn = function () {
     var initSignIn = function () {
 
         $("#btnSignInSubmit").on('click', function () {
@@ -18,7 +45,8 @@
 
         $.ajax({
             type: 'POST',
-            url: '/Account/Login',
+            //url: '/Account/Login',
+            url: '/api/Account/LoginTokenGenerator',
             data: JSON.stringify(dataObj),
 
             dataType: 'json',
@@ -37,6 +65,10 @@
                         $('.message').addClass('text-success');
                         $('.message').html('');
                         $('.message').html(result.message);
+
+                        console.log(result.data);
+                        AppLocalStorage.SetJwtToken(result.data.token);
+
                         window.location.href = (window.location.origin + result.redirectUrl);
                     }
                     else {
@@ -92,7 +124,8 @@ var SignUp = function () {
 
         $.ajax({
             type: "POST",
-            url: "/Account/Register",
+            //url: "/Account/Register",
+            url: "/api/Account/Register",
             data: JSON.stringify(dataObj),
 
             dataType: 'json',
