@@ -160,28 +160,30 @@ namespace FunlabProgramChallenge.Controllers
             //return View(model);
         }
 
-        //[HttpGet]
+        [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogOut()
         {
             try
             {
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOut", $"User:{User.Identity.Name}"));
                 await _signInManager.SignOutAsync();
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOut", $"User logged out"));
 
                 _result = Result.Ok(MessageHelper.LogOut);
                 return Json(_result);
+
             }
             catch (Exception ex)
             {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Logout"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LogOut"));
                 //_result = Result.Fail(MessageHelper.LogOutFail);
                 //return Json(_result);
             }
 
-            _result = Result.Ok(MessageHelper.LogIn, "/Home/Index");
+            _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
             return Json(_result);
             //return RedirectToAction("Index", "Home");
-
         }
 
         //
@@ -341,21 +343,7 @@ namespace FunlabProgramChallenge.Controllers
             //return View(model);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> LogOut()
-        {
-            try
-            {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOff", $"User:{User.Identity.Name}"));
-                await _signInManager.SignOutAsync();
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOff", $"User logged out"));
-            }
-            catch (Exception ex)
-            {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LogOff"));
-            }
-            return RedirectToAction("Login", "Account");
-        }
+        
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
         {
