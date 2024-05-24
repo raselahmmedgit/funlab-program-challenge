@@ -1,15 +1,12 @@
 ﻿using FunlabProgramChallenge.Core;
 using FunlabProgramChallenge.Core.Identity;
 using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.Managers;
 using FunlabProgramChallenge.Utility;
+using FunlabProgramChallenge.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using FunlabProgramChallenge.ViewModels;
-using System.Web;
-using FunlabProgramChallenge.Managers;
-using System.IdentityModel.Tokens.Jwt;
-using FunlabProgramChallenge.JwtGenerator;
 
 namespace FunlabProgramChallenge.Controllers
 {
@@ -129,7 +126,7 @@ namespace FunlabProgramChallenge.Controllers
                         {
                             //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
-                            _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                            _result = Result.Fail(MessageHelper.LogInInvalid);
                             return Json(_result);
                             //return View(model);
                         }
@@ -137,7 +134,7 @@ namespace FunlabProgramChallenge.Controllers
                     else
                     {
                         //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
-                        _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                        _result = Result.Fail(MessageHelper.LogInInvalid);
                         return Json(_result);
                         //return View(model);
                     }

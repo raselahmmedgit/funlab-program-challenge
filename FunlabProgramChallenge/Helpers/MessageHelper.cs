@@ -23,7 +23,7 @@
 
         public static string LogIn = "Sign in successfully.";
         public static string LogInFail = "Sign in failed.";
-        public static string LogInFailInvalid = "Invalid Sign in attempt.";
+        public static string LogInInvalid = "Invalid Sign in attempt.";
 
         public static string Register = "Sign up successfully.";
         public static string RegisterFail = "Sign up failed.";
