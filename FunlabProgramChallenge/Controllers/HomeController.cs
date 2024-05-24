@@ -7,13 +7,18 @@ namespace FunlabProgramChallenge.Controllers
 {
     public class HomeController : BaseController
     {
+        #region Global Variable Declaration
         private readonly ILogger<HomeController> _logger;
+        #endregion
 
+        #region Constructor
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
         }
+        #endregion
 
+        #region Actions
         public IActionResult Index()
         {
             try
@@ -31,5 +36,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
         }
+
+        #endregion
     }
 }
