@@ -55,7 +55,7 @@ namespace FunlabProgramChallenge.Controllers
 
         #region Actions
 
-        [HttpPost]
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> LoginTokenGenerator([FromBody] LoginViewModel model)
         {

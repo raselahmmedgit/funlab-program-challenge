@@ -42,12 +42,16 @@ var SignIn = function () {
         }
 
         //let authorization = ('Bearer ' + localStorage.getItem('token'));
+        //let url = (window.location.origin + '/api/Account/LoginTokenGenerator');
+        //let url = (window.location.origin + '/api/Account/LoginTokenGenerator?UserEmail=' + dataObj.UserEmail + '&UserPassword=' + dataObj.UserPassword);
 
         $.ajax({
-            type: 'POST',
-            //url: '/Account/Login',
-            url: '/api/Account/LoginTokenGenerator',
+            type: 'GET',
+            url: '/Account/Login',
+            //url: '/api/Account/LoginTokenGenerator',
+            //url: url,
             data: JSON.stringify(dataObj),
+            //data: dataObj,
 
             dataType: 'json',
             contentType: 'application/json',
