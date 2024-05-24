@@ -23,7 +23,7 @@
 
         public static string LogIn = "Sign in successfully.";
         public static string LogInFail = "Sign in failed.";
-        public static string LogInFailInvalid = "Invalid Sign in attempt.";
+        public static string LogInInvalid = "Invalid Sign in attempt.";
 
         public static string Register = "Sign up successfully.";
         public static string RegisterFail = "Sign up failed.";
@@ -47,8 +47,8 @@
         public static string UnhandledError = "We are facing some problem while processing the current request. Please try again later.";
         public static string UnAuthenticated = "You are not authenticated user.";
         public static string Authenticated = "You are authenticated user.";
-        public static string Unauthorized = "You are not authenticated user.";
-        public static string Authorized = "You are authenticated user.";
+        public static string Unauthorized = "You are not authorized user.";
+        public static string Authorized = "You are authorized user.";
         public static string NullError = "Requested object could not be found.";
         public static string NullReferenceExceptionError = "There are one or more required fields are missing.";
 
@@ -103,5 +103,8 @@
 
         public static string Payment = "Payment successfully.";
         public static string PaymentFail = "Payment failed.";
+
+        public static string JwtToken = "Token Generate successfully.";
+        public static string JwtTokenInvalid = "Invalid token in attempt.";
     }
 }

@@ -7,7 +7,7 @@ namespace FunlabProgramChallenge.JwtGenerator
     /// </summary>
     public class JwtTokenOptions
     {
-        public const string Token = "Token";
+        public const string Name = "JwtToken";
 
         public string ValidAudience { get; set; } = String.Empty;
         public string ValidIssuer { get; set; } = String.Empty;

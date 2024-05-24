@@ -1,4 +1,5 @@
 ﻿using FunlabProgramChallenge.Core.Identity;
+using FunlabProgramChallenge.Helpers;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -86,7 +87,7 @@ namespace FunlabProgramChallenge.JwtGenerator
             var tokenHandler = new JwtSecurityTokenHandler();
             var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out SecurityToken securityToken);
             if (securityToken is not JwtSecurityToken jwtSecurityToken || !jwtSecurityToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
-                throw new SecurityTokenException("Invalid token");
+                throw new SecurityTokenException(MessageHelper.JwtTokenInvalid);
 
             return principal;
 

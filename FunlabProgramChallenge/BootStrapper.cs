@@ -115,7 +115,7 @@ namespace FunlabProgramChallenge
                 #region JwtToken
 
                 JwtTokenOptions jwtTokenOptions = new JwtTokenOptions();
-                var jwtTokenSectiion = builder.Configuration.GetSection(JwtTokenOptions.Token);
+                var jwtTokenSectiion = builder.Configuration.GetSection(JwtTokenOptions.Name);
                 jwtTokenSectiion.Bind(jwtTokenOptions);
                 builder.Services.Configure<JwtTokenOptions>(jwtTokenSectiion);
                 builder.Services.AddAuthentication(options =>

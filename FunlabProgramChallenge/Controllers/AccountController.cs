@@ -14,6 +14,7 @@ using FunlabProgramChallenge.JwtGenerator;
 namespace FunlabProgramChallenge.Controllers
 {
     [ApiController]
+    [Route("api/[controller]")]
     public class AccountController : BaseController
     {
         #region Global Variable Declaration
@@ -69,7 +70,7 @@ namespace FunlabProgramChallenge.Controllers
                         Token = new JwtSecurityTokenHandler().WriteToken(token.AccessToken),
                         RefreshToken = token.RefreshTokenModel.RefreshToken,
                         ExpiryDate = token.ExpiryDate,
-                        Message = "Authorized"
+                        Message = MessageHelper.JwtToken
                     };
 
                     _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
@@ -161,13 +162,13 @@ namespace FunlabProgramChallenge.Controllers
                         else
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
-                            _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                            _result = Result.Fail(MessageHelper.LogInInvalid);
                             return Json(_result);
                         }
                     }
                     else
                     {
-                        _result = Result.Fail(MessageHelper.LogInFailInvalid);
+                        _result = Result.Fail(MessageHelper.LogInInvalid);
                         return Json(_result);
                     }
                 }
