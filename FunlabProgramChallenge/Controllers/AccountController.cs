@@ -13,7 +13,6 @@ using FunlabProgramChallenge.JwtGenerator;
 
 namespace FunlabProgramChallenge.Controllers
 {
-    [Authorize]
     public class AccountController : BaseController
     {
         #region Global Variable Declaration
@@ -342,8 +341,6 @@ namespace FunlabProgramChallenge.Controllers
             return Json(_result);
             //return View(model);
         }
-
-        
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
         {
