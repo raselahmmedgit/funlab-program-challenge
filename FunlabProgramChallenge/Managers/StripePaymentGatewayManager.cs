@@ -101,6 +101,7 @@ namespace FunlabProgramChallenge.Managers
 
                 #region Stripe charges                             
 
+                ////Error: Amount must be at least $0.50 usd
                 //var paymentCharge = await charges.CreateAsync(new ChargeCreateOptions
                 //{
                 //    Source = paymentToken.Id,//Customer = customer.Id,

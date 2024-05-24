@@ -213,22 +213,6 @@ namespace FunlabProgramChallenge.Controllers
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("Register[POST]", ""));
                 if (ModelState.IsValid)
                 {
-
-
-                    #region Stripe Payment Gateway
-
-                    var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
-                    if (!resultStripePayment.Success)
-                    {
-                        //ModelState.AddModelError(string.Empty, resultStripePayment.Message);
-                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
-                        _result = Result.Fail(resultStripePayment.Message);
-                        return Json(_result);
-                        //return View(model);
-                    }
-
-                    #endregion
-
                     string userName = ((model.UserEmail).Split('@')[0]).Trim(); // you are get here username.
 
                     var user = new ApplicationUser
@@ -247,6 +231,21 @@ namespace FunlabProgramChallenge.Controllers
                         return Json(_result);
                         //return View(model);
                     }
+
+                    #region Stripe Payment Gateway
+
+                    var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
+                    if (!resultStripePayment.Success)
+                    {
+                        //ModelState.AddModelError(string.Empty, resultStripePayment.Message);
+                        _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
+                        _result = Result.Fail(resultStripePayment.Message);
+                        return Json(_result);
+                        //return View(model);
+                    }
+
+                    #endregion
+
 
                     //var role = new ApplicationRole
                     //{
@@ -279,7 +278,7 @@ namespace FunlabProgramChallenge.Controllers
 
                             #region Create Member
 
-                            var resultMember = await CreateMemberAsync(model);
+                            var resultMember = await CreateMemberAsync(user, model);
                             if (!resultMember.Success)
                             {
                                 //ModelState.AddModelError(string.Empty, resultMember.Message);
@@ -372,14 +371,12 @@ namespace FunlabProgramChallenge.Controllers
             }
         }
 
-        private async Task<Result> CreateMemberAsync(RegisterViewModel registerViewModel)
+        private async Task<Result> CreateMemberAsync(ApplicationUser user, RegisterViewModel registerViewModel)
         {
             try
             {
                 string cardExpirationMonth = ((registerViewModel.CardExpiration).Split('/')[0]).Trim();
                 string cardExpirationYear = ((registerViewModel.CardExpiration).Split('/')[1]).Trim();
-
-                ApplicationUser user = await _userManager.GetUserAsync(HttpContext.User);
 
                 var memberViewModel = new MemberViewModel()
                 {

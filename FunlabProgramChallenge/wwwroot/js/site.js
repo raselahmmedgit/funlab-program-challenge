@@ -115,6 +115,7 @@ var SignUp = function () {
                     }
                     else {
                         //console.log(result.message);
+                        $('.message').addClass('text-danger');
                         $('.message').html('');
                         $('.message').html(result.message);
                     }
