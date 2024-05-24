@@ -45,6 +45,7 @@ namespace FunlabProgramChallenge.Controllers
             _signInManager = signInManager;
             _roleManager = roleManager;
             _passwordHasher = passwordHasher;
+            _iTokenGenerator = iTokenGenerator;
             _iStripePaymentGatewayManager = iStripePaymentGatewayManager;
             _iEmailSenderManager = iEmailSenderManager;
             _iMemberManager = iMemberManager;
@@ -138,18 +139,15 @@ namespace FunlabProgramChallenge.Controllers
                                 {
                                     _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
                                     return Json(_result);
-                                    //return RedirectToAction("Index", "Admin");
                                 }
 
                                 _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
                                 return Json(_result);
-                                //return Redirect(model.ReturnUrl);
                             }
                             else
                             {
                                 _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
                                 return Json(_result);
-                                //return RedirectToLocal(model.ReturnUrl);
                             }
 
                         }
@@ -159,23 +157,18 @@ namespace FunlabProgramChallenge.Controllers
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInFail);
                             return Json(_result);
-                            //return View("Lockout");
                         }
                         else
                         {
-                            //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInFailInvalid);
                             return Json(_result);
-                            //return View(model);
                         }
                     }
                     else
                     {
-                        //ModelState.AddModelError(string.Empty, "Invalid log in attempt.");
                         _result = Result.Fail(MessageHelper.LogInFailInvalid);
                         return Json(_result);
-                        //return View(model);
                     }
                 }
                 else {
@@ -192,16 +185,17 @@ namespace FunlabProgramChallenge.Controllers
 
             _result = Result.Fail(MessageHelper.LogInFail);
             return Json(_result);
-            //return View(model);
         }
 
-        //[HttpGet]
+        [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Logout()
+        public async Task<IActionResult> LogOut()
         {
             try
             {
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOut", $"User:{User.Identity.Name}"));
                 await _signInManager.SignOutAsync();
+                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOut", $"User logged out"));
 
                 _result = Result.Ok(MessageHelper.LogOut);
                 return Json(_result);
@@ -213,10 +207,8 @@ namespace FunlabProgramChallenge.Controllers
                 //return Json(_result);
             }
 
-            _result = Result.Ok(MessageHelper.LogIn, "/Home/Index");
+            _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
             return Json(_result);
-            //return RedirectToAction("Index", "Home");
-
         }
 
         //
@@ -257,11 +249,9 @@ namespace FunlabProgramChallenge.Controllers
                     var resultStripePayment = await ProcessStripePaymentGatewayAsync(model);
                     if (!resultStripePayment.Success)
                     {
-                        //ModelState.AddModelError(string.Empty, resultStripePayment.Message);
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
                         _result = Result.Fail(resultStripePayment.Message);
                         return Json(_result);
-                        //return View(model);
                     }
 
                     #endregion
@@ -278,11 +268,9 @@ namespace FunlabProgramChallenge.Controllers
                     var resultEmailExists = await IsEmailExistsAsync(user);
                     if (!resultEmailExists.Success)
                     {
-                        //ModelState.AddModelError(string.Empty, resultEmailExists.Message);
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultEmailExists.Message));
                         _result = Result.Fail(resultEmailExists.Message);
                         return Json(_result);
-                        //return View(model);
                     }
 
                     //var role = new ApplicationRole
@@ -319,11 +307,9 @@ namespace FunlabProgramChallenge.Controllers
                             var resultMember = await CreateMemberAsync(model);
                             if (!resultMember.Success)
                             {
-                                //ModelState.AddModelError(string.Empty, resultMember.Message);
                                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultMember.Message));
                                 _result = Result.Fail(resultMember.Message);
                                 return Json(_result);
-                                //return View(model);
                             }
 
                             #endregion
@@ -335,18 +321,15 @@ namespace FunlabProgramChallenge.Controllers
                                 {
                                     _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
                                     return Json(_result);
-                                    //return RedirectToAction("Index", "Admin");
                                 }
 
                                 _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
                                 return Json(_result);
-                                //return Redirect(model.ReturnUrl);
                             }
                             else
                             {
                                 _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
                                 return Json(_result);
-                                //return RedirectToLocal(model.ReturnUrl);
                             }
 
                         }
@@ -354,7 +337,6 @@ namespace FunlabProgramChallenge.Controllers
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.UserEmail}"));
                         _result = Result.Fail(MessageHelper.RegisterFail);
                         return Json(_result);
-                        //AddErrors(result);
                     }
 
                 }
@@ -373,24 +355,8 @@ namespace FunlabProgramChallenge.Controllers
 
             _result = Result.Fail(MessageHelper.RegisterFail);
             return Json(_result);
-            //return View(model);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> LogOut()
-        {
-            try
-            {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOff", $"User:{User.Identity.Name}"));
-                await _signInManager.SignOutAsync();
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOff", $"User logged out"));
-            }
-            catch (Exception ex)
-            {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LogOff"));
-            }
-            return RedirectToAction("Login", "Account");
-        }
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
         {
@@ -500,14 +466,6 @@ namespace FunlabProgramChallenge.Controllers
 
         #region Helpers
 
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError(string.Empty, error.Description);
-            }
-        }
-
         private Task<ApplicationUser> GetCurrentUserAsync()
         {
             return _userManager.GetUserAsync(HttpContext.User);
@@ -523,22 +481,6 @@ namespace FunlabProgramChallenge.Controllers
             {
                 return RedirectToAction(nameof(HomeController.Index), "Home");
             }
-        }
-
-        private async Task<string> GenareteForgotPasswordEmailTemplateAsync(ApplicationUser user)
-        {
-            string htmlTemplate = string.Empty;
-
-            var passwordResetToken = await _userManager.GeneratePasswordResetTokenAsync(user);
-            string link = Url.Action("ResetPassword", "Account", new { userId = user.Id, email = user.Email, code = passwordResetToken }, protocol: HttpContext.Request.Scheme);
-
-            string title = "Please reset your password by clicking here:";
-            string linkText = "Forgot Password";
-
-            //htmlTemplate = "Please reset your password by clicking here: <a target='_blank' href=\"" + link + "\">link</a>";
-            htmlTemplate = EmailTemplateHelper.GetEmailTemplate(title, link, linkText);
-
-            return htmlTemplate;
         }
 
         #endregion
