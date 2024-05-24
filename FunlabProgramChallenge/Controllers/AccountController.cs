@@ -13,7 +13,7 @@ using FunlabProgramChallenge.JwtGenerator;
 
 namespace FunlabProgramChallenge.Controllers
 {
-    [Authorize]
+    [ApiController]
     public class AccountController : BaseController
     {
         #region Global Variable Declaration

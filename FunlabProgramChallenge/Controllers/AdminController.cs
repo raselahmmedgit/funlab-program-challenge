@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FunlabProgramChallenge.Controllers
 {
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public class AdminController : BaseController
     {
         #region Global Variable Declaration
