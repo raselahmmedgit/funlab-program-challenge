@@ -42,13 +42,13 @@ var SignIn = function () {
         }
 
         //let authorization = ('Bearer ' + localStorage.getItem('token'));
-        //let url = (window.location.origin + '/api/Account/LoginTokenGenerator');
-        //let url = (window.location.origin + '/api/Account/LoginTokenGenerator?UserEmail=' + dataObj.UserEmail + '&UserPassword=' + dataObj.UserPassword);
+        //let url = (window.location.origin + '/api/Account/LoginToken');
+        //let url = (window.location.origin + '/api/Account/LoginToken?UserEmail=' + dataObj.UserEmail + '&UserPassword=' + dataObj.UserPassword);
 
         $.ajax({
             type: 'GET',
             url: '/Account/Login',
-            //url: '/api/Account/LoginTokenGenerator',
+            //url: '/api/Account/LoginToken',
             //url: url,
             data: JSON.stringify(dataObj),
             //data: dataObj,

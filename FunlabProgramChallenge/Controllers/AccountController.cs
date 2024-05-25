@@ -57,7 +57,7 @@ namespace FunlabProgramChallenge.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> LoginTokenGenerator([FromBody] LoginViewModel model)
+        public async Task<IActionResult> LoginToken([FromBody] LoginViewModel model)
         {
             try
             {
@@ -75,13 +75,15 @@ namespace FunlabProgramChallenge.Controllers
                     _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
                     return Ok(_result);
                 }
-
-                _result = Result.Fail(MessageHelper.Unauthorized);
-                return NotFound(_result);
+                else
+                {
+                    _result = Result.Fail(MessageHelper.Unauthorized);
+                    return NotFound(_result);
+                }
             }
             catch (Exception ex)
             {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LoginTokenGenerator[POST]"));
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "LoginToken[POST]"));
             }
 
             _result = Result.Fail(MessageHelper.Unauthorized);
@@ -119,18 +121,37 @@ namespace FunlabProgramChallenge.Controllers
                             {
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
-                                    _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
-                                    return Ok(_result);
+                                    model.ReturnUrl = "/Admin/Index";
                                 }
+                            }
+                            else
+                            {
+                                model.ReturnUrl = "/Home/Index";
+                            }
 
-                                _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
+                            #region Token
+
+                            var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                            if (token.AccessToken != null)
+                            {
+                                var tokenData = new
+                                {
+                                    Token = new JwtSecurityTokenHandler().WriteToken(token.AccessToken),
+                                    RefreshToken = token.RefreshTokenModel.RefreshToken,
+                                    ExpiryDate = token.ExpiryDate,
+                                    Message = MessageHelper.JwtToken
+                                };
+
+                                _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
                                 return Ok(_result);
                             }
                             else
                             {
-                                _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
-                                return Ok(_result);
+                                _result = Result.Fail(MessageHelper.Unauthorized);
+                                return NotFound(_result);
                             }
+
+                            #endregion
 
                         }
 
