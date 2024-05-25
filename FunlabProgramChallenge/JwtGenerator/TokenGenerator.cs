@@ -16,13 +16,11 @@ namespace FunlabProgramChallenge.JwtGenerator
     public class TokenGenerator : ITokenGenerator
     {
         private readonly JwtTokenOptions _jwtTokenOptions;
-        private IUserClaimsPrincipalFactory<ApplicationUser> _appClaimsPrincipalFactory;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public TokenGenerator(IUserClaimsPrincipalFactory<ApplicationUser> appClaimsPrincipalFactory, IOptions<JwtTokenOptions> jwtTokenOptions, UserManager<ApplicationUser> userManager)
+        public TokenGenerator(IOptions<JwtTokenOptions> jwtTokenOptions, UserManager<ApplicationUser> userManager)
         {
             _jwtTokenOptions = jwtTokenOptions.Value;
-            _appClaimsPrincipalFactory = appClaimsPrincipalFactory;
             _userManager = userManager;
         }
 
@@ -33,14 +31,18 @@ namespace FunlabProgramChallenge.JwtGenerator
                 var user = await _userManager.FindByNameAsync(loginId);
                 if (user != null)
                 {
-                    var auth = await _appClaimsPrincipalFactory.CreateAsync(user);
+                    var claims = new[] {
+                        new Claim(JwtRegisteredClaimNames.Name, user.UserName),
+                        new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                        new Claim(JwtRegisteredClaimNames.Jti, user.Id)
+                    };
 
                     var authSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtTokenOptions.Secret));
                     var token = new JwtSecurityToken(
                         issuer: _jwtTokenOptions.ValidIssuer,
                         audience: _jwtTokenOptions.ValidAudience,
                         expires: DateTime.Now.AddHours(_jwtTokenOptions.RefreshTokenValidityInHour),
-                        claims: auth.Claims,
+                        claims: claims,
                         signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
                     );
                     return new TokenModel

@@ -197,29 +197,6 @@ namespace FunlabProgramChallenge.Controllers
             return Ok(_result);
         }
 
-        [HttpGet]
-        [Authorize]
-        public async Task<IActionResult> LogOut()
-        {
-            try
-            {
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestStart("LogOut", $"User:{User.Identity.Name}"));
-                await _signInManager.SignOutAsync();
-                _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOut", $"User logged out"));
-
-                _result = Result.Ok(MessageHelper.LogOut);
-                return Ok(_result);
-            }
-            catch (Exception ex)
-            {
-                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Logout"));
-                //_result = Result.Fail(MessageHelper.LogOutFail);
-                //return Json(_result);
-            }
-
-            _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
-            return Ok(_result);
-        }
 
         //
         // POST: /Account/Register

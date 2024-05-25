@@ -33,6 +33,29 @@ namespace FunlabProgramChallenge.Controllers
             }
         }
 
+        public IActionResult Authorized()
+        {
+            try
+            {
+                return View();
+            }
+            catch (Exception ex)
+            {
+                return ErrorView(ex);
+            }
+        }
+
+        public IActionResult Unauthorized()
+        {
+            try
+            {
+                return View();
+            }
+            catch (Exception ex)
+            {
+                return ErrorView(ex);
+            }
+        }
 
         [HttpGet]
         public IActionResult Login(string returnUrl = null)
