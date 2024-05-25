@@ -120,16 +120,16 @@ namespace FunlabProgramChallenge.Controllers
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
                                     _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
-                                    return Json(_result);
+                                    return Ok(_result);
                                 }
 
                                 _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
-                                return Json(_result);
+                                return Ok(_result);
                             }
                             else
                             {
                                 _result = Result.Ok(MessageHelper.LogIn, model.ReturnUrl);
-                                return Json(_result);
+                                return Ok(_result);
                             }
 
                         }
@@ -138,24 +138,24 @@ namespace FunlabProgramChallenge.Controllers
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInFail);
-                            return Json(_result);
+                            return BadRequest(_result);
                         }
                         else
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInInvalid);
-                            return Json(_result);
+                            return BadRequest(_result);
                         }
                     }
                     else
                     {
                         _result = Result.Fail(MessageHelper.LogInInvalid);
-                        return Json(_result);
+                        return NotFound(_result);
                     }
                 }
                 else {
                     _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
-                    return Json(_result);
+                    return BadRequest(_result);
                 }
 
             }
@@ -166,7 +166,7 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Fail(MessageHelper.LogInFail);
-            return Json(_result);
+            return BadRequest(_result);
         }
 
         [HttpGet]
@@ -180,7 +180,7 @@ namespace FunlabProgramChallenge.Controllers
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOut", $"User logged out"));
 
                 _result = Result.Ok(MessageHelper.LogOut);
-                return Json(_result);
+                return Ok(_result);
             }
             catch (Exception ex)
             {
@@ -190,7 +190,7 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
-            return Json(_result);
+            return BadRequest(_result);
         }
 
         //
@@ -219,7 +219,7 @@ namespace FunlabProgramChallenge.Controllers
                     {
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultEmailExists.Message));
                         _result = Result.Fail(resultEmailExists.Message);
-                        return Json(_result);
+                        return BadRequest(_result);
                     }
 
                     #region Stripe Payment Gateway
@@ -229,7 +229,7 @@ namespace FunlabProgramChallenge.Controllers
                     {
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
                         _result = Result.Fail(resultStripePayment.Message);
-                        return Json(_result);
+                        return BadRequest(_result);
                     }
 
                     #endregion
@@ -260,20 +260,20 @@ namespace FunlabProgramChallenge.Controllers
                             //await _userManager.AddToRoleAsync(user, model.RoleName);
                             await _userManager.AddToRoleAsync(user, resultRoleName);
 
-                            await _signInManager.SignInAsync(user, isPersistent: false);
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
-
                             #region Create Member
 
-                            var resultMember = await CreateMemberAsync(model);
+                            var resultMember = await CreateMemberAsync(user, model);
                             if (!resultMember.Success)
                             {
                                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultMember.Message));
                                 _result = Result.Fail(resultMember.Message);
-                                return Json(_result);
+                                return BadRequest(_result);
                             }
 
                             #endregion
+
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
 
                             var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRoleName.Admin);
                             if (isAdmin)
@@ -281,30 +281,34 @@ namespace FunlabProgramChallenge.Controllers
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
                                     _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
-                                    return Json(_result);
+                                    return Ok(_result);
                                 }
 
                                 _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
-                                return Json(_result);
+                                return Ok(_result);
                             }
                             else
                             {
                                 _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
-                                return Json(_result);
+                                return Ok(_result);
                             }
 
                         }
 
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.UserEmail}"));
                         _result = Result.Fail(MessageHelper.RegisterFail);
-                        return Json(_result);
+                        return BadRequest(_result);
                     }
+
+                    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User role not found failed, UserEmail:{model.UserEmail}"));
+                    _result = Result.Fail(MessageHelper.RegisterFail);
+                    return NotFound(_result);
 
                 }
                 else
                 {
                     _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
-                    return Json(_result);
+                    return BadRequest(_result);
                 }
 
             }
@@ -315,7 +319,7 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Fail(MessageHelper.RegisterFail);
-            return Json(_result);
+            return BadRequest(_result);
         }
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
@@ -351,14 +355,12 @@ namespace FunlabProgramChallenge.Controllers
             }
         }
 
-        private async Task<Result> CreateMemberAsync(RegisterViewModel registerViewModel)
+        private async Task<Result> CreateMemberAsync(ApplicationUser user, RegisterViewModel registerViewModel)
         {
             try
             {
                 string cardExpirationMonth = ((registerViewModel.CardExpiration).Split('/')[0]).Trim();
                 string cardExpirationYear = ((registerViewModel.CardExpiration).Split('/')[1]).Trim();
-
-                ApplicationUser user = await _userManager.GetUserAsync(HttpContext.User);
 
                 var memberViewModel = new MemberViewModel()
                 {
