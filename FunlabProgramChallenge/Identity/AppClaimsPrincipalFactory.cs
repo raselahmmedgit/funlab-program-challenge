@@ -18,24 +18,18 @@ namespace FunlabProgramChallenge.Core.Identity
         {
             var principal = await base.CreateAsync(user);
 
-            //if (!string.IsNullOrWhiteSpace(user.FirstName))
-            //{
-            //    ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
-            //        new Claim(ClaimTypes.GivenName, user.FirstName)
-            //    });
-            //}
-            //if (!string.IsNullOrWhiteSpace(user.DisplayName))
-            //{
-            //    ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
-            //        new Claim("DisplayName", user.DisplayName)
-            //    });
-            //}
-            //if (!string.IsNullOrWhiteSpace(user.LastName))
-            //{
-            //    ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
-            //         new Claim(ClaimTypes.Surname, user.LastName),
-            //    });
-            //}
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+            {
+                ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
+                    new Claim(ClaimTypes.Name, user.UserName)
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(user.Email))
+            {
+                ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
+                    new Claim(ClaimTypes.Email, user.Email)
+                });
+            }
             return principal;
         }
     }
