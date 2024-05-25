@@ -54,6 +54,15 @@ namespace FunlabProgramChallenge.Core
             ParentName = parentName;
         }
 
+        private Result(bool success, string message, string messageType, string redirectUrl, object data)
+        {
+            Success = success;
+            Message = message;
+            MessageType = messageType;
+            RedirectUrl = redirectUrl;
+            Data = data;
+        }
+
         private Result(bool success, string message, string messageType, string parentId, string parentName, object data)
         {
             Success = success;
@@ -112,6 +121,11 @@ namespace FunlabProgramChallenge.Core
         public static Result Ok(string message, string redirectUrl)
         {
             return new Result(true, message, MessageHelper.MessageTypeSuccess, redirectUrl);
+        }
+
+        public static Result Ok(string message, string redirectUrl, object data)
+        {
+            return new Result(true, message, MessageHelper.MessageTypeSuccess, redirectUrl, data);
         }
 
         public static Result Ok(string message, string parentId, string parentName, object data)

@@ -6,7 +6,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FunlabProgramChallenge.Controllers
 {
-    [Authorize]
+    //[Authorize]
     public class AdminController : BaseController
     {
         #region Global Variable Declaration
@@ -25,7 +25,16 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                return View();
+
+                if (HttpContext.User.Identity.IsAuthenticated)
+                {
+                    return View();
+                }
+                else
+                {
+                    return View("Unauthorized");
+                }
+                
             }
             catch (Exception ex)
             {

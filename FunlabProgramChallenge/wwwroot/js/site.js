@@ -1,18 +1,44 @@
-﻿var AppLocalStorage = function () {
+﻿var AppRoute = function () {
+
+    var _redirect = function (redirectUrl) {
+
+        let jwtToken = AppLocalStorage.GetJwtToken();
+        if (jwtToken == undefined || jwtToken == null) {
+            redirectUrl = '/Home/Index';
+            window.location.href = (window.location.origin + redirectUrl);
+            return;
+        }
+
+        if (redirectUrl == undefined || redirectUrl == null) {
+            redirectUrl = '/Home/Index';
+        }
+
+        window.location.href = (window.location.origin + redirectUrl);
+        return;
+    };
+
+    return {
+        Redirect: _redirect
+    };
+}();
+
+var AppLocalStorage = function () {
 
     var _get = function (key) {
-        localStorage.getItem(key);
+        return localStorage.getItem(key);
     };
 
     var _set = function (key, value) {
+        localStorage.removeItem(key);
         localStorage.setItem(key, value);
     };
 
     var _getJwtToken = function () {
-        localStorage.getItem('jwt_token');
+        return localStorage.getItem('jwt_token');
     };
 
     var _setJwtToken = function (value) {
+        localStorage.removeItem('jwt_token');
         localStorage.setItem('jwt_token', value);
     };
 
@@ -42,16 +68,13 @@ var SignIn = function () {
         }
 
         //let authorization = ('Bearer ' + localStorage.getItem('token'));
-        //let url = (window.location.origin + '/api/Account/LoginToken');
-        //let url = (window.location.origin + '/api/Account/LoginToken?UserEmail=' + dataObj.UserEmail + '&UserPassword=' + dataObj.UserPassword);
 
         $.ajax({
-            type: 'GET',
-            url: '/Account/Login',
+            type: 'POST',
+            //url: '/Account/Login',
+            url: '/api/Account/Login',
             //url: '/api/Account/LoginToken',
-            //url: url,
             data: JSON.stringify(dataObj),
-            //data: dataObj,
 
             dataType: 'json',
             contentType: 'application/json',
@@ -73,7 +96,7 @@ var SignIn = function () {
                         console.log(result.data);
                         AppLocalStorage.SetJwtToken(result.data.token);
 
-                        window.location.href = (window.location.origin + result.redirectUrl);
+                        AppRoute.Redirect(result.redirectUrl);
                     }
                     else {
                         //console.log(result.message);
@@ -148,7 +171,11 @@ var SignUp = function () {
                         $('.message').addClass('text-success');
                         $('.message').html('');
                         $('.message').html(result.message);
-                        window.location.href = (window.location.origin + result.redirectUrl);
+
+                        console.log(result.data);
+                        AppLocalStorage.SetJwtToken(result.data.token);
+
+                        AppRoute.Redirect(result.redirectUrl);
                     }
                     else {
                         //console.log(result.message);

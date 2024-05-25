@@ -55,7 +55,8 @@ namespace FunlabProgramChallenge.Controllers
 
         #region Actions
 
-        [HttpGet]
+        [Route("LoginToken")]
+        [HttpPost]
         [AllowAnonymous]
         public async Task<IActionResult> LoginToken([FromBody] LoginViewModel model)
         {
@@ -64,6 +65,8 @@ namespace FunlabProgramChallenge.Controllers
                 var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
                 if (token.AccessToken != null)
                 {
+                    model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
+
                     var tokenData = new
                     {
                         Token = new JwtSecurityTokenHandler().WriteToken(token.AccessToken),
@@ -72,13 +75,13 @@ namespace FunlabProgramChallenge.Controllers
                         Message = MessageHelper.JwtToken
                     };
 
-                    _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
+                    _result = Result.Ok(MessageHelper.Authorized, redirectUrl: model.ReturnUrl, data: tokenData);
                     return Ok(_result);
                 }
                 else
                 {
                     _result = Result.Fail(MessageHelper.Unauthorized);
-                    return NotFound(_result);
+                    return Ok(_result);
                 }
             }
             catch (Exception ex)
@@ -87,11 +90,12 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Fail(MessageHelper.Unauthorized);
-            return BadRequest(_result);
+            return Ok(_result);
         }
 
         //
         // POST: /Account/Login
+        [Route("Login")]
         [HttpPost]
         [AllowAnonymous]
         //[ValidateAntiForgeryToken]
@@ -126,7 +130,10 @@ namespace FunlabProgramChallenge.Controllers
                             }
                             else
                             {
-                                model.ReturnUrl = "/Home/Index";
+                                if (string.IsNullOrEmpty(model.ReturnUrl))
+                                {
+                                    model.ReturnUrl = "/Home/Index";
+                                }
                             }
 
                             #region Token
@@ -142,13 +149,13 @@ namespace FunlabProgramChallenge.Controllers
                                     Message = MessageHelper.JwtToken
                                 };
 
-                                _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
+                                _result = Result.Ok(MessageHelper.Authorized, redirectUrl: model.ReturnUrl, data: tokenData);
                                 return Ok(_result);
                             }
                             else
                             {
                                 _result = Result.Fail(MessageHelper.Unauthorized);
-                                return NotFound(_result);
+                                return Ok(_result);
                             }
 
                             #endregion
@@ -159,24 +166,24 @@ namespace FunlabProgramChallenge.Controllers
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"User account locked out, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInFail);
-                            return BadRequest(_result);
+                            return Ok(_result);
                         }
                         else
                         {
                             _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Login[POST]", $"Invalid login attempt, UserEmail: {model.UserEmail}"));
                             _result = Result.Fail(MessageHelper.LogInInvalid);
-                            return BadRequest(_result);
+                            return Ok(_result);
                         }
                     }
                     else
                     {
                         _result = Result.Fail(MessageHelper.LogInInvalid);
-                        return NotFound(_result);
+                        return Ok(_result);
                     }
                 }
                 else {
                     _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
-                    return BadRequest(_result);
+                    return Ok(_result);
                 }
 
             }
@@ -187,7 +194,7 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Fail(MessageHelper.LogInFail);
-            return BadRequest(_result);
+            return Ok(_result);
         }
 
         [HttpGet]
@@ -211,11 +218,12 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
-            return BadRequest(_result);
+            return Ok(_result);
         }
 
         //
         // POST: /Account/Register
+        [Route("Register")]
         [HttpPost]
         [AllowAnonymous]
         //[ValidateAntiForgeryToken]
@@ -240,7 +248,7 @@ namespace FunlabProgramChallenge.Controllers
                     {
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultEmailExists.Message));
                         _result = Result.Fail(resultEmailExists.Message);
-                        return BadRequest(_result);
+                        return Ok(_result);
                     }
 
                     #region Stripe Payment Gateway
@@ -250,7 +258,7 @@ namespace FunlabProgramChallenge.Controllers
                     {
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultStripePayment.Message));
                         _result = Result.Fail(resultStripePayment.Message);
-                        return BadRequest(_result);
+                        return Ok(_result);
                     }
 
                     #endregion
@@ -288,7 +296,7 @@ namespace FunlabProgramChallenge.Controllers
                             {
                                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", resultMember.Message));
                                 _result = Result.Fail(resultMember.Message);
-                                return BadRequest(_result);
+                                return Ok(_result);
                             }
 
                             #endregion
@@ -306,7 +314,10 @@ namespace FunlabProgramChallenge.Controllers
                             }
                             else
                             {
-                                model.ReturnUrl = "/Home/Index";
+                                if (string.IsNullOrEmpty(model.ReturnUrl))
+                                {
+                                    model.ReturnUrl = "/Home/Index";
+                                }
                             }
 
                             #region Token
@@ -322,13 +333,13 @@ namespace FunlabProgramChallenge.Controllers
                                     Message = MessageHelper.JwtToken
                                 };
 
-                                _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
+                                _result = Result.Ok(MessageHelper.Authorized, redirectUrl: model.ReturnUrl, data: tokenData);
                                 return Ok(_result);
                             }
                             else
                             {
                                 _result = Result.Fail(MessageHelper.Unauthorized);
-                                return NotFound(_result);
+                                return Ok(_result);
                             }
 
                             #endregion
@@ -338,18 +349,18 @@ namespace FunlabProgramChallenge.Controllers
 
                         _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User creation failed, UserEmail:{model.UserEmail}"));
                         _result = Result.Fail(MessageHelper.RegisterFail);
-                        return BadRequest(_result);
+                        return Ok(_result);
                     }
 
                     _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User role not found failed, UserEmail:{model.UserEmail}"));
                     _result = Result.Fail(MessageHelper.RegisterFail);
-                    return NotFound(_result);
+                    return Ok(_result);
 
                 }
                 else
                 {
                     _result = Result.Fail(ExceptionHelper.ModelStateErrorFirstFormat(ModelState));
-                    return BadRequest(_result);
+                    return Ok(_result);
                 }
 
             }
@@ -360,7 +371,7 @@ namespace FunlabProgramChallenge.Controllers
             }
 
             _result = Result.Fail(MessageHelper.RegisterFail);
-            return BadRequest(_result);
+            return Ok(_result);
         }
 
         private async Task<StripePaymentGatewayResult> ProcessStripePaymentGatewayAsync(RegisterViewModel registerViewModel)
