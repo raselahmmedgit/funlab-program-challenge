@@ -107,8 +107,9 @@ namespace FunlabProgramChallenge.Controllers
                 await _signInManager.SignOutAsync();
                 _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("LogOut", $"User logged out"));
 
-                _result = Result.Ok(MessageHelper.LogOut);
-                return Ok(_result);
+                //_result = Result.Ok(MessageHelper.LogOut);
+                //return Ok(_result);
+                return RedirectToAction("Index", "Home");
             }
             catch (Exception ex)
             {
@@ -117,8 +118,9 @@ namespace FunlabProgramChallenge.Controllers
                 //return Json(_result);
             }
 
-            _result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
-            return Ok(_result);
+            //_result = Result.Ok(MessageHelper.LogOutFail, "/Home/Index");
+            //return Ok(_result);
+            return RedirectToAction("Index", "Home");
         }
 
         #endregion
