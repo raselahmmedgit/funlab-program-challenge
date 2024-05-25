@@ -270,12 +270,6 @@ namespace FunlabProgramChallenge.Controllers
                         {
                             model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
 
-                            //await _userManager.AddToRoleAsync(user, model.RoleName);
-                            await _userManager.AddToRoleAsync(user, resultRoleName);
-
-                            await _signInManager.SignInAsync(user, isPersistent: false);
-                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
-
                             #region Create Member
 
                             var resultMember = await CreateMemberAsync(user, model);
@@ -289,6 +283,14 @@ namespace FunlabProgramChallenge.Controllers
                             }
 
                             #endregion
+
+                            //await _userManager.AddToRoleAsync(user, model.RoleName);
+                            await _userManager.AddToRoleAsync(user, resultRoleName);
+
+                            await _signInManager.SignInAsync(user, isPersistent: false);
+                            _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User created a new account with password, UserEmail:{model.UserEmail}"));
+
+                            
 
                             var isAdmin = await _userManager.IsInRoleAsync(user, AppConstants.AppRoleName.Admin);
                             if (isAdmin)
@@ -318,6 +320,11 @@ namespace FunlabProgramChallenge.Controllers
                         return Json(_result);
                         //AddErrors(result);
                     }
+
+                    _iLogger.LogInformation(LoggerMessageHelper.LogFormattedMessageForRequestSuccess("Register[POST]", $"User role not found, UserEmail:{model.UserEmail}"));
+                    _result = Result.Fail(MessageHelper.RegisterFail);
+                    return Json(_result);
+                    //AddErrors(result);
 
                 }
                 else
