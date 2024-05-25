@@ -87,7 +87,6 @@ var SignIn = function () {
                 App.LoaderShow();
             },
             success: function (result) {
-                debugger;
                 //console.log(result);
                 if (result != undefined || result != null) {
 
@@ -166,7 +165,6 @@ var SignUp = function () {
                 App.LoaderShow();
             },
             success: function (result) {
-                debugger;
                 //console.log(result);
                 if (result != undefined || result != null) {
 
@@ -214,34 +212,49 @@ var WebCalculator = function () {
         const specialChars = ["%", "*", "/", "-", "+", "="];
         let output = "";
 
-        let current = "0";
-        let memory;
+        let memory = "";
 
         //Define function to calculate based on button clicked.
         const calculate = (btnValue) => {
+            
             display.focus();
             if (btnValue === "=" && output !== "") {
                 //If output has '%', replace with '/100' before evaluating.
                 output = eval(output.replace("%", "/100"));
             } else if (btnValue === "C") {
                 output = "";
-                memory = undefined;
-                current = "0";
             } else if (btnValue === "DEL") {
                 //If DEL button is clicked, remove the last character from the output.
                 output = output.toString().slice(0, -1);
             } else if (btnValue === "MC") {
-                memory = undefined;
+                memory = "";
                 output = "";
             } else if (btnValue === "MR") {
-                current = "" + memory;
-                output = current;
+                if (memory === "") {
+                    output = "";
+                }
+                else {
+                    output = memory;
+                }
+                
             } else if (btnValue === "M+") {
-                current = "" + ((isNaN(current) ? 0 : Number(current)) + (memory ?? 0));
-                output = current;
+                if (memory === "") {
+                    memory = output;
+                    output = "";
+                }
+                else {
+                    output = Number(memory) + Number(output);
+                    memory = output;
+                }
             } else if (btnValue === "M-") {
-                current = "" + ((isNaN(current) ? 0 : Number(current)) - (memory ?? 0));
-                output = current;
+                if (memory === "") {
+                    memory = output;
+                    output = "";
+                }
+                else {
+                    output = Number(memory) - Number(output);
+                    memory = output;
+                }
             } else {
                 //If output is empty and button is specialChars then return
                 if (output === "" && specialChars.includes(btnValue)) return;
@@ -277,7 +290,6 @@ var Member = function () {
 
         let authorization = ('Bearer ' + AppLocalStorage.GetJwtToken());
 
-        debugger;
         $.ajax({
             type: 'GET',
             url: '/Admin/Members',
@@ -289,7 +301,6 @@ var Member = function () {
                 App.LoaderShow();
             },
             success: function (result) {
-                debugger;
                 //console.log(result);
                 if (result != undefined || result != null) {
 
