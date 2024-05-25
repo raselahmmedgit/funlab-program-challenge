@@ -301,18 +301,38 @@ namespace FunlabProgramChallenge.Controllers
                             {
                                 if (string.IsNullOrEmpty(model.ReturnUrl))
                                 {
-                                    _result = Result.Ok(MessageHelper.LogIn, "/Admin/Index");
-                                    return Ok(_result);
+                                    model.ReturnUrl = "/Admin/Index";
                                 }
+                            }
+                            else
+                            {
+                                model.ReturnUrl = "/Home/Index";
+                            }
 
-                                _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
+                            #region Token
+
+                            var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                            if (token.AccessToken != null)
+                            {
+                                var tokenData = new
+                                {
+                                    Token = new JwtSecurityTokenHandler().WriteToken(token.AccessToken),
+                                    RefreshToken = token.RefreshTokenModel.RefreshToken,
+                                    ExpiryDate = token.ExpiryDate,
+                                    Message = MessageHelper.JwtToken
+                                };
+
+                                _result = Result.Ok(MessageHelper.Authorized, parentId: "", parentName: "", data: tokenData);
                                 return Ok(_result);
                             }
                             else
                             {
-                                _result = Result.Ok(MessageHelper.Register, model.ReturnUrl);
-                                return Ok(_result);
+                                _result = Result.Fail(MessageHelper.Unauthorized);
+                                return NotFound(_result);
                             }
+
+                            #endregion
+
 
                         }
 
