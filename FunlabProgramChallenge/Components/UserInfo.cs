@@ -1,5 +1,6 @@
 ﻿using FunlabProgramChallenge.Core.Identity;
 using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.JwtGenerator;
 using FunlabProgramChallenge.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,25 +11,26 @@ namespace FunlabProgramChallenge.Components
     {
         #region Global Variable Declaration
         private readonly ILogger<UserInfo> _iLogger;
-        private UserManager<ApplicationUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly ITokenManager _iTokenManager;
         #endregion
 
         #region Constructor
-        public UserInfo(ILogger<UserInfo> iLogger, UserManager<ApplicationUser> userManager)
+        public UserInfo(ILogger<UserInfo> iLogger, UserManager<ApplicationUser> userManager, ITokenManager iTokenManager)
         {
             _iLogger = iLogger;
             _userManager = userManager;
+            _iTokenManager = iTokenManager;
         }
         #endregion
 
         #region Actions
-        public async Task<IViewComponentResult> InvokeAsync()
+        public async Task<IViewComponentResult> InvokeAsync(string token)
         {
-            LoggedUserViewModel loggedUserViewModel = new LoggedUserViewModel();
+            LogInUserViewModel loggedUserViewModel = new LogInUserViewModel();
             try
             {
-                //string userName = HttpContext.User.Identity.Name;
-                loggedUserViewModel = await GetUser();
+                loggedUserViewModel = await GetUser(token);
             }
             catch (Exception ex)
             {
@@ -37,16 +39,21 @@ namespace FunlabProgramChallenge.Components
             return View(loggedUserViewModel);
         }
 
-        public async Task<LoggedUserViewModel> GetUser()
+        public async Task<LogInUserViewModel> GetUser(string token)
         {
-            LoggedUserViewModel loggedUserViewModel = new LoggedUserViewModel();
+            LogInUserViewModel loggedUserViewModel = new LogInUserViewModel();
             try
             {
-                ApplicationUser user = await _userManager.GetUserAsync(HttpContext.User);
-                var roles = await _userManager.GetRolesAsync(user);
+                var tokenClaimsPrincipal = _iTokenManager.GetClaimsPrincipalByToken(token);
+                var user = await _userManager.GetUserAsync(tokenClaimsPrincipal);
+                if (user != null) 
+                {
+                    var roles = await _userManager.GetRolesAsync(user);
+
+                    loggedUserViewModel.UserName = user?.UserName;
+                    loggedUserViewModel.RoleName = roles.FirstOrDefault();
+                }
                 
-                loggedUserViewModel.UserName = user?.UserName;
-                loggedUserViewModel.Role = roles.FirstOrDefault();
             }
             catch (Exception ex)
             {

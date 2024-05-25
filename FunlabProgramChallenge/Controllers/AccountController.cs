@@ -22,7 +22,7 @@ namespace FunlabProgramChallenge.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly RoleManager<ApplicationRole> _roleManager;
         private readonly IPasswordHasher<ApplicationUser> _passwordHasher;
-        private readonly ITokenGenerator _iTokenGenerator;
+        private readonly ITokenManager _iTokenManager;
         private readonly IStripePaymentGatewayManager _iStripePaymentGatewayManager;
         private readonly IEmailSenderManager _iEmailSenderManager;
         private readonly IMemberManager _iMemberManager;
@@ -34,7 +34,7 @@ namespace FunlabProgramChallenge.Controllers
             SignInManager<ApplicationUser> signInManager,
             RoleManager<ApplicationRole> roleManager,
             IPasswordHasher<ApplicationUser> passwordHasher,
-            ITokenGenerator iTokenGenerator,
+            ITokenManager iTokenManager,
             IStripePaymentGatewayManager iStripePaymentGatewayManager,
             IEmailSenderManager iEmailSenderManager,
             IMemberManager iMemberManager,
@@ -45,7 +45,7 @@ namespace FunlabProgramChallenge.Controllers
             _signInManager = signInManager;
             _roleManager = roleManager;
             _passwordHasher = passwordHasher;
-            _iTokenGenerator = iTokenGenerator;
+            _iTokenManager = iTokenManager;
             _iStripePaymentGatewayManager = iStripePaymentGatewayManager;
             _iEmailSenderManager = iEmailSenderManager;
             _iMemberManager = iMemberManager;
@@ -62,7 +62,7 @@ namespace FunlabProgramChallenge.Controllers
         {
             try
             {
-                var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                var token = await _iTokenManager.CreateTokenAsync(model.UserEmail);
                 if (token.AccessToken != null)
                 {
                     model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
@@ -115,6 +115,9 @@ namespace FunlabProgramChallenge.Controllers
                         var result = await _signInManager.PasswordSignInAsync(model.UserEmail, model.UserPassword, model.RememberMe, lockoutOnFailure: false);
                         if (result.Succeeded)
                         {
+                            //await _signInManager.SignInAsync(user, model.RememberMe);
+                            //await _signInManager.SignInAsync(user, model.RememberMe, "JwtBearer");
+
                             model.ReturnUrl = string.IsNullOrEmpty(model.ReturnUrl) ? "/Admin/Index" : model.ReturnUrl;
 
                             //var data = await GetUserSignInOutHistoryLocal(model);
@@ -138,7 +141,7 @@ namespace FunlabProgramChallenge.Controllers
 
                             #region Token
 
-                            var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                            var token = await _iTokenManager.CreateTokenAsync(model.UserEmail);
                             if (token.AccessToken != null)
                             {
                                 var tokenData = new
@@ -148,7 +151,7 @@ namespace FunlabProgramChallenge.Controllers
                                     ExpiryDate = token.ExpiryDate,
                                     Message = MessageHelper.JwtToken
                                 };
-
+                                
                                 _result = Result.Ok(MessageHelper.Authorized, redirectUrl: model.ReturnUrl, data: tokenData);
                                 return Ok(_result);
                             }
@@ -299,7 +302,7 @@ namespace FunlabProgramChallenge.Controllers
 
                             #region Token
 
-                            var token = await _iTokenGenerator.CreateTokenAsync(model.UserEmail);
+                            var token = await _iTokenManager.CreateTokenAsync(model.UserEmail);
                             if (token.AccessToken != null)
                             {
                                 var tokenData = new

@@ -6,6 +6,7 @@ using FunlabProgramChallenge.Models;
 using FunlabProgramChallenge.Repositories;
 using FunlabProgramChallenge.Utility;
 using FunlabProgramChallenge.Web.Data;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -39,7 +40,7 @@ namespace FunlabProgramChallenge
                 builder.Services.AddScoped<IEmailSenderManager, EmailSenderManager>();
                 builder.Services.AddScoped<IStripePaymentGatewayManager, StripePaymentGatewayManager>();
 
-                builder.Services.AddScoped<ITokenGenerator, TokenGenerator>();
+                builder.Services.AddScoped<ITokenManager, TokenManager>();
 
                 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
@@ -83,16 +84,16 @@ namespace FunlabProgramChallenge
 
                 builder.Services.AddScoped<IUserClaimsPrincipalFactory<ApplicationUser>, AppClaimsPrincipalFactory>();
 
-                builder.Services.ConfigureApplicationCookie(options =>
-                {
-                    // Cookie settings
-                    options.Cookie.HttpOnly = true;
-                    options.ExpireTimeSpan = TimeSpan.FromDays(30);
-                    options.LogoutPath = "/Account/Logout";
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                    options.SlidingExpiration = true;
-                });
+                //builder.Services.ConfigureApplicationCookie(options =>
+                //{
+                //    // Cookie settings
+                //    options.Cookie.HttpOnly = true;
+                //    options.ExpireTimeSpan = TimeSpan.FromDays(30);
+                //    options.LogoutPath = "/Account/Logout";
+                //    options.LoginPath = "/Account/Login";
+                //    options.AccessDeniedPath = "/Account/AccessDenied";
+                //    options.SlidingExpiration = true;
+                //});
 
                 #endregion
 
@@ -118,6 +119,7 @@ namespace FunlabProgramChallenge
                 var jwtTokenSectiion = builder.Configuration.GetSection(JwtTokenOptions.Name);
                 jwtTokenSectiion.Bind(jwtTokenOptions);
                 builder.Services.Configure<JwtTokenOptions>(jwtTokenSectiion);
+
                 builder.Services.AddAuthentication(options =>
                 {
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -139,7 +141,17 @@ namespace FunlabProgramChallenge
                         ValidIssuer = builder.Configuration["JwtToken:ValidIssuer"],
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtToken:Secret"]))
                     };
-                });
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            context.Token = context.Request.Cookies[CookieAuthenticationDefaults.AuthenticationScheme];
+                            context.HttpContext.User = context.Principal;
+                            return Task.CompletedTask;
+                        },
+                    };
+                }).AddCookie(CookieAuthenticationDefaults.AuthenticationScheme);
 
                 #endregion
 

@@ -1,6 +1,8 @@
-﻿@{
+﻿@model FunlabProgramChallenge.ViewModels.AdminViewModel
+@{
     ViewData["Title"] = "Admin Page";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    ViewData["Token"] = Model.Token;
 }
 <div class="jumbotron">
     <div class="row">
@@ -54,6 +56,7 @@
     <script type="text/javascript">
         $(document).ready(function () {
             WebCalculator.InitWebCalculator();
+            Member.InitMember();
         });
     </script>
 }

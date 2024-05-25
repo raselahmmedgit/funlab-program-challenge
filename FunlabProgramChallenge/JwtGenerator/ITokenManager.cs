@@ -3,10 +3,11 @@ using System.Threading.Tasks;
 
 namespace FunlabProgramChallenge.JwtGenerator
 {
-    public interface ITokenGenerator
+    public interface ITokenManager
     {
         Task<TokenModel> CreateTokenAsync(string loginId);
         RefreshTokenModel GenerateRefreshToken();
-        ClaimsPrincipal GetPrincipalFromExpiredToken(string token);
+        ClaimsPrincipal GetClaimsPrincipalByToken(string token);
+        bool IsValidateToken(string token);
     }
 }

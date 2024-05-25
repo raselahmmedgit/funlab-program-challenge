@@ -19,7 +19,7 @@
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                @await Component.InvokeAsync(nameof(UserInfo))
+                @await Component.InvokeAsync(nameof(UserInfo), new { token = @ViewData["Token"].ToString() })
             </div>
         </nav>
     </header>

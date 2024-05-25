@@ -20,6 +20,12 @@ namespace FunlabProgramChallenge.Core.Identity
         {
             var principal = await base.CreateAsync(user);
 
+            if (!string.IsNullOrWhiteSpace(user.Id))
+            {
+                ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id)
+                });
+            }
             if (!string.IsNullOrWhiteSpace(user.UserName))
             {
                 ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
@@ -30,6 +36,18 @@ namespace FunlabProgramChallenge.Core.Identity
             {
                 ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
                     new Claim(ClaimTypes.Email, user.Email)
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(user.UserName))
+            {
+                ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
+                    new Claim(ClaimTypes.GivenName, user.UserName)
+                });
+            }
+            if (!string.IsNullOrWhiteSpace(user.PhoneNumber))
+            {
+                ((ClaimsIdentity)principal.Identity).AddClaims(new[] {
+                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber)
                 });
             }
             return principal;

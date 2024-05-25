@@ -1,10 +1,16 @@
 ﻿using FunlabProgramChallenge.Core;
 using FunlabProgramChallenge.Core.Identity;
 using FunlabProgramChallenge.Helpers;
+using FunlabProgramChallenge.JwtGenerator;
+using FunlabProgramChallenge.Managers;
+using FunlabProgramChallenge.ViewModels;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FunlabProgramChallenge.Controllers
 {
@@ -14,26 +20,30 @@ namespace FunlabProgramChallenge.Controllers
         #region Global Variable Declaration
         private readonly ILogger<AdminController> _iLogger;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly ITokenManager _iTokenManager;
+        private readonly IMemberManager _iMemberManager;
         #endregion
 
         #region Constructor
-        public AdminController(ILogger<AdminController> iLogger, SignInManager<ApplicationUser> signInManager)
+        public AdminController(ILogger<AdminController> iLogger, SignInManager<ApplicationUser> signInManager, ITokenManager iTokenManager, IMemberManager iMemberManager)
         {
             _iLogger = iLogger;
             _signInManager = signInManager;
+            _iTokenManager = iTokenManager;
+            _iMemberManager = iMemberManager;
         }
         #endregion
 
         #region Actions
-        public IActionResult Index()
+        public IActionResult Index(string token)
         {
             try
             {
-                var currentUser = HttpContext.User;
-
-                if (currentUser != null)
+                var isValidateToken = _iTokenManager.IsValidateToken(token);
+                if (isValidateToken)
                 {
-                    return View();
+                    var adminViewModel = new AdminViewModel() { Token = token };
+                    return View(adminViewModel);
                 }
                 else
                 {
@@ -47,9 +57,48 @@ namespace FunlabProgramChallenge.Controllers
             }
         }
 
-
+        //[Route("Members")]
         [HttpGet]
         [Authorize]
+        public async Task<IActionResult> Members()
+        {
+            try
+            {
+                var accessToken = Request.Headers["Authorization"];
+                string token = await HttpContext.GetTokenAsync("access_token");
+
+                var isValidateToken = _iTokenManager.IsValidateToken(token);
+                if (isValidateToken)
+                {
+                    ViewData["Token"] = token;
+                    var members = await _iMemberManager.GetMembersAsync();
+
+                    _result = Result.Ok(MessageHelper.Success, data: members);
+                    return Ok(_result);
+                    //return View(members);
+                }
+                else
+                {
+                    _result = Result.Fail(MessageHelper.Fail);
+                    return Ok(_result);
+                    //return View("/Home/Unauthorized");
+                }
+                
+            }
+            catch (Exception ex)
+            {
+                _iLogger.LogError(LoggerMessageHelper.FormateMessageForException(ex, "Members"));
+                //_result = Result.Fail(MessageHelper.Fail);
+                //return Json(_result);
+                //return ErrorView(ex);
+            }
+
+            _result = Result.Ok(MessageHelper.Fail, "/Home/Index");
+            return Ok(_result);
+        }
+
+        [HttpGet]
+        //[Authorize]
         public async Task<IActionResult> LogOut()
         {
             try

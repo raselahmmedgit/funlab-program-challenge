@@ -8,13 +8,17 @@
             window.location.href = (window.location.origin + redirectUrl);
             return;
         }
+        else {
+            if (redirectUrl == undefined || redirectUrl == null) {
+                redirectUrl = '/Home/Index';
+                window.location.href = (window.location.origin + redirectUrl);
+                return;
+            }
 
-        if (redirectUrl == undefined || redirectUrl == null) {
-            redirectUrl = '/Home/Index';
+            window.location.href = (window.location.origin + redirectUrl + '?token=' + jwtToken);
+            return;
         }
-
-        window.location.href = (window.location.origin + redirectUrl);
-        return;
+        
     };
 
     return {
@@ -67,7 +71,7 @@ var SignIn = function () {
             UserPassword: $("#UserPassword").val()
         }
 
-        //let authorization = ('Bearer ' + localStorage.getItem('token'));
+        //let authorization = ('Bearer ' + AppLocalStorage.GetJwtToken());
 
         $.ajax({
             type: 'POST',
@@ -147,7 +151,7 @@ var SignUp = function () {
             CardCountry: $("#CardCountry").val()
         }
 
-        //let authorization = ('Bearer ' + localStorage.getItem('token'));
+        //let authorization = ('Bearer ' + AppLocalStorage.GetJwtToken());
 
         $.ajax({
             type: "POST",
@@ -210,25 +214,34 @@ var WebCalculator = function () {
         const specialChars = ["%", "*", "/", "-", "+", "="];
         let output = "";
 
+        let current = "0";
+        let memory;
+
         //Define function to calculate based on button clicked.
         const calculate = (btnValue) => {
             display.focus();
             if (btnValue === "=" && output !== "") {
                 //If output has '%', replace with '/100' before evaluating.
                 output = eval(output.replace("%", "/100"));
-            } else if (btnValue === "AC") {
+            } else if (btnValue === "C") {
                 output = "";
+                memory = undefined;
+                current = "0";
             } else if (btnValue === "DEL") {
                 //If DEL button is clicked, remove the last character from the output.
                 output = output.toString().slice(0, -1);
             } else if (btnValue === "MC") {
+                memory = undefined;
                 output = "";
             } else if (btnValue === "MR") {
-                output = "";
+                current = "" + memory;
+                output = current;
             } else if (btnValue === "M+") {
-                output = "";
+                current = "" + ((isNaN(current) ? 0 : Number(current)) + (memory ?? 0));
+                output = current;
             } else if (btnValue === "M-") {
-                output = "";
+                current = "" + ((isNaN(current) ? 0 : Number(current)) - (memory ?? 0));
+                output = current;
             } else {
                 //If output is empty and button is specialChars then return
                 if (output === "" && specialChars.includes(btnValue)) return;
@@ -247,5 +260,61 @@ var WebCalculator = function () {
 
     return {
         InitWebCalculator: initWebCalculator
+    };
+}();
+
+
+var Member = function () {
+    var initMember = function () {
+
+        $("#lnkGetMembers").on('click', function () {
+            _getMembers();
+        });
+
+    };
+
+    var _getMembers = function () {
+
+        let authorization = ('Bearer ' + AppLocalStorage.GetJwtToken());
+
+        debugger;
+        $.ajax({
+            type: 'GET',
+            url: '/Admin/Members',
+
+            dataType: 'json',
+            contentType: 'application/json',
+            headers: { "Authorization": authorization },
+            beforeSend: function () {
+                App.LoaderShow();
+            },
+            success: function (result) {
+                debugger;
+                //console.log(result);
+                if (result != undefined || result != null) {
+
+                    if (result.success == true) {
+                        //console.log(result.message);
+                        console.log(result.data);
+                    }
+                    else {
+                        //console.log(result.message);
+                    }
+
+                }
+                //check null
+            },
+            complete: function (xhr, status) {
+                App.LoaderHide();
+            },
+            error: function (req, status, error) {
+                App.LoaderHide();
+            }
+        });
+
+    };
+
+    return {
+        InitMember: initMember
     };
 }();
