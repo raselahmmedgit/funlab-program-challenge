@@ -1,5 +1,4 @@
 ﻿using FunlabProgramChallenge.Models;
-using FunlabProgramChallenge.Web.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace FunlabProgramChallenge.Model

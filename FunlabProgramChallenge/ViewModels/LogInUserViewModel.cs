@@ -1,6 +1,6 @@
 ﻿namespace FunlabProgramChallenge.ViewModels
 {
-    public partial class LogInUserViewModel
+    public partial class LoginUserViewModel
     {
         public string Token { get; set; }
         public string UserName { get; set; }

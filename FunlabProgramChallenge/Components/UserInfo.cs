@@ -27,7 +27,7 @@ namespace FunlabProgramChallenge.Components
         #region Actions
         public async Task<IViewComponentResult> InvokeAsync(string token)
         {
-            LogInUserViewModel loggedUserViewModel = new LogInUserViewModel();
+            LoginUserViewModel loggedUserViewModel = new LoginUserViewModel();
             try
             {
                 loggedUserViewModel = await GetUser(token);
@@ -39,9 +39,9 @@ namespace FunlabProgramChallenge.Components
             return View(loggedUserViewModel);
         }
 
-        public async Task<LogInUserViewModel> GetUser(string token)
+        public async Task<LoginUserViewModel> GetUser(string token)
         {
-            LogInUserViewModel loggedUserViewModel = new LogInUserViewModel();
+            LoginUserViewModel loggedUserViewModel = new LoginUserViewModel();
             try
             {
                 var tokenClaimsPrincipal = _iTokenManager.GetClaimsPrincipalByToken(token);
