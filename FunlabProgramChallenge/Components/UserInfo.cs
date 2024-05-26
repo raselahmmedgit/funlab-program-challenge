@@ -24,7 +24,7 @@ namespace FunlabProgramChallenge.Components
         #region Actions
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            LoggedUserViewModel loggedUserViewModel = new LoggedUserViewModel();
+            LoginUserViewModel loggedUserViewModel = new LoginUserViewModel();
             try
             {
                 //string userName = HttpContext.User.Identity.Name;
@@ -37,9 +37,9 @@ namespace FunlabProgramChallenge.Components
             return View(loggedUserViewModel);
         }
 
-        public async Task<LoggedUserViewModel> GetUser()
+        public async Task<LoginUserViewModel> GetUser()
         {
-            LoggedUserViewModel loggedUserViewModel = new LoggedUserViewModel();
+            LoginUserViewModel loggedUserViewModel = new LoginUserViewModel();
             try
             {
                 ApplicationUser user = await _userManager.GetUserAsync(HttpContext.User);
