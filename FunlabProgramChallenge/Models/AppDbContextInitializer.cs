@@ -51,16 +51,19 @@ namespace FunlabProgramChallenge.Models
         {
             try
             {
-                var canConnect = _appIdentityDbContext.Database.CanConnect();
-                if (canConnect)
+                if (!_roleManager.Roles.Any())
                 {
-                    var appIdentityEnsureCreated = _appIdentityDbContext.Database.EnsureCreated();
-                    if (appIdentityEnsureCreated)
+                    var canConnect = _appIdentityDbContext.Database.CanConnect();
+                    if (canConnect)
                     {
-                        var appDatabaseCreator = (RelationalDatabaseCreator)_appDbContext.Database.GetService<IDatabaseCreator>();
-                        appDatabaseCreator.CreateTables();
+                        var appIdentityEnsureCreated = _appIdentityDbContext.Database.EnsureCreated();
+                        if (appIdentityEnsureCreated)
+                        {
+                            var appDatabaseCreator = (RelationalDatabaseCreator)_appDbContext.Database.GetService<IDatabaseCreator>();
+                            appDatabaseCreator.CreateTables();
 
-                        await SeedDataAsync();
+                            await SeedDataAsync();
+                        }
                     }
                 }
             }
