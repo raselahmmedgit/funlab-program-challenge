@@ -25,12 +25,15 @@ namespace FunlabProgramChallenge
                 builder.Services.Configure<EmailConfig>(builder.Configuration.GetSection(EmailConfig.Name));
                 builder.Services.Configure<AppConfig>(builder.Configuration.GetSection(AppConfig.Name));
                 builder.Services.Configure<StripePaymentGatewayConfig>(builder.Configuration.GetSection(StripePaymentGatewayConfig.Name));
+                builder.Services.Configure<AppDbConfig>(builder.Configuration.GetSection(AppDbConfig.Name));
 
                 builder.Services.AddScoped<IMemberRepository, MemberRepository>();
                 builder.Services.AddScoped<IMemberManager, MemberManager>();
 
                 builder.Services.AddScoped<IEmailSenderManager, EmailSenderManager>();
                 builder.Services.AddScoped<IStripePaymentGatewayManager, StripePaymentGatewayManager>();
+
+                builder.Services.AddScoped<AppDbContextInitializer>();
 
                 builder.Services.AddRouting(options => options.LowercaseUrls = true);
 
@@ -113,16 +116,15 @@ namespace FunlabProgramChallenge
 
         }
 
-        public static void RunSeedData(WebApplication app)
+        public static async Task RunSeedDataAsync(WebApplication app)
         {
             try
             {
                 using (var scope = app.Services.CreateScope())
                 {
-                    var services = scope.ServiceProvider;
-
                     // Initializes and seeds the database.
-                    AppDbContextInitializer.SeedData(services);
+                    var appDbContextInitializer = scope.ServiceProvider.GetService<AppDbContextInitializer>();
+                    await appDbContextInitializer?.CreateDatabaseAndSeedDataAsync();
                 }
 
             }

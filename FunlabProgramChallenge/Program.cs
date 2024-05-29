@@ -6,7 +6,7 @@ BootStrapper.Run(builder);
 
 var app = builder.Build();
 
-//BootStrapper.RunSeedData(app);
+await BootStrapper.RunSeedDataAsync(app);
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
