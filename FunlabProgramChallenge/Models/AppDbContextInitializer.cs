@@ -57,8 +57,11 @@ namespace FunlabProgramChallenge.Models
                     var appIdentityEnsureCreated = _appIdentityDbContext.Database.EnsureCreated();
                     if (appIdentityEnsureCreated)
                     {
-                        var appDatabaseCreator = (RelationalDatabaseCreator)_appDbContext.Database.GetService<IDatabaseCreator>();
-                        appDatabaseCreator.CreateTables();
+                        if (!IsExistTable(_appDbContext))
+                        {
+                            var appDatabaseCreator = (RelationalDatabaseCreator)_appDbContext.Database.GetService<IDatabaseCreator>();
+                            appDatabaseCreator.CreateTables();
+                        }
 
                         await SeedDataAsync();
                     }
@@ -166,6 +169,19 @@ namespace FunlabProgramChallenge.Models
             }
 
 
+        }
+
+        private bool IsExistTable(AppDbContext appDbContext)
+        {
+            try
+            {
+                appDbContext.Member.ToList();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
