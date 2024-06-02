@@ -51,19 +51,19 @@ namespace FunlabProgramChallenge.Models
         {
             try
             {
-                if (!_roleManager.Roles.Any())
+                var canConnect = _appIdentityDbContext.Database.CanConnect();
+                if (canConnect)
                 {
-                    var canConnect = _appIdentityDbContext.Database.CanConnect();
-                    if (canConnect)
+                    var appIdentityEnsureCreated = _appIdentityDbContext.Database.EnsureCreated();
+                    if (appIdentityEnsureCreated)
                     {
-                        var appIdentityEnsureCreated = _appIdentityDbContext.Database.EnsureCreated();
-                        if (appIdentityEnsureCreated)
+                        if (!IsExistTable(_appDbContext))
                         {
                             var appDatabaseCreator = (RelationalDatabaseCreator)_appDbContext.Database.GetService<IDatabaseCreator>();
                             appDatabaseCreator.CreateTables();
-
-                            await SeedDataAsync();
                         }
+
+                        await SeedDataAsync();
                     }
                 }
             }
@@ -169,6 +169,19 @@ namespace FunlabProgramChallenge.Models
             }
 
 
+        }
+
+        private bool IsExistTable(AppDbContext appDbContext)
+        {
+            try
+            {
+                appDbContext.Member.ToList();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }
