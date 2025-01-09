@@ -27,7 +27,7 @@ namespace FunlabProgramChallenge.Repositories
             return await _context.Member.ToListAsync();
         }
 
-        public async Task<int> InsertOrUpdatetMemberAsync(Member model)
+        public async Task<int> InsertOrUpdateMemberAsync(Member model)
         {
             if (model.MemberId == 0)
             {
@@ -96,7 +96,7 @@ namespace FunlabProgramChallenge.Repositories
     {
         Task<Member> GetMemberAsync(int id);
         Task<IEnumerable<Member>> GetMembersAsync();
-        Task<int> InsertOrUpdatetMemberAsync(Member model);
+        Task<int> InsertOrUpdateMemberAsync(Member model);
         Task<int> InsertMemberAsync(Member model);
         Task<int> UpdateMemberAsync(Member model);
         Task<int> DeleteMemberAsync(Member model);
